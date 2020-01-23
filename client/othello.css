@@ -1,0 +1,21 @@
+#page {
+}
+
+#gameArea {
+    display: flex;
+    justify-content: center;
+}
+
+#gameBoard {
+    
+}
+
+#canvas {
+    background-color: #666666;
+    width: 640px;
+    height: 480px;
+}
+
+#howToPlay {
+    margin-left : 10px;
+}
