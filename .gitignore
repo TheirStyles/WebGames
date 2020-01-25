@@ -353,5 +353,5 @@ MigrationBackup/
 .ionide/
 
 # User Add
-.exe
+*.exe
 .vscode/
