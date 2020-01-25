@@ -14,7 +14,7 @@ namespace app::http_server {
 	{
 	}
 
-	template<bool isRequest, class Body, class Fields>
+	template<bool isRequest, typename Body, typename Fields>
 	void Session::SendLamda::operator()(http::message<isRequest, Body, Fields>&& msg) const {
 		//メッセージの寿命を延長
 		auto sp = std::make_shared<http::message<isRequest, Body, Fields>>(std::move(msg));
