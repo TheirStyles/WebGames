@@ -155,5 +155,5 @@ Browse.VC.opendb
 *.vcxproj
 *.vcxproj.filters
 *.sln
-.vs
-.vscode
+.vs/
+.vscode/
