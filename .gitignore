@@ -151,10 +151,6 @@ $RECYCLE.BIN/
 
 #USER ADD
 Browse.VC.opendb
-*.props
-*.vcxproj
-*.vcxproj.filters
-*.sln
-
+Browse.VC.db
 /.vscode/
 /.vs/
