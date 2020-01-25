@@ -34,7 +34,7 @@ namespace app::http_server {
 			* @param msg メッセージ
 			* @return none
 			*/
-			template<bool isRequest, class Body, class Fields>
+			template<bool isRequest, typename Body, typename Fields>
 			void operator()(http::message<isRequest, Body, Fields>&& msg) const;
 		};
 
