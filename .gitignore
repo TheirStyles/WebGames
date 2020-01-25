@@ -152,5 +152,6 @@ $RECYCLE.BIN/
 #USER ADD
 Browse.VC.opendb
 Browse.VC.db
+slnx.sqlite
 /.vscode/
 /.vs/
