@@ -1,4 +1,4 @@
-/**
+﻿/**
 *  @file http_server.hpp
 *  @brief HttpServer定義ファイル
 */
@@ -6,18 +6,10 @@
 #ifndef WEBGAMES_HTTP_SERVER_HPP
 #define WEBGAMES_HTTP_SERVER_HPP
 
-#include <string>
-#include <memory>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/dispatch.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/config.hpp>
+#include "stdafx.h"
+#include "listener.hpp"
 
-#include "./listener.hpp"
-
-namespace app::http {
+namespace app::http_server {
 
     namespace http = boost::beast::http;           
     namespace net = boost::asio;            
@@ -29,8 +21,8 @@ namespace app::http {
     */
     class HttpServer {
     private:
-        static constexpr char* DocRoot = "./";      //!< デフォルトのドキュメントルート
-        static constexpr unsigned char Port = 80;    //!< ポート番号
+        static constexpr char* DOC_ROOT = ".";		 //!< デフォルトのドキュメントルート
+        static constexpr unsigned char PORT = 80;    //!< ポート番号
 
     public:
         HttpServer() = delete;
@@ -47,10 +39,18 @@ namespace app::http {
         */
         HttpServer(net::io_context& ioc);
 
+		/**
+		* @brief コンストラクタ
+		* @param ioc コンテキスト
+		* @param doc_root ドキュメントルートのパス
+		* @exception runtime_error送出
+		*/
+		HttpServer(net::io_context& ioc, const std::string& doc_root);
+
     private:   
         net::io_context& ioc;
         const tcp::endpoint endpoint;
-        std::shared_ptr<std::string const> doc_root;
+        std::shared_ptr<const std::string> doc_root;
         std::shared_ptr<Listener> listener;
         
     public:

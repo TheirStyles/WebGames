@@ -1,28 +1,15 @@
-/**
+﻿/**
  * @file listener.cpp
  * @brief Listenerクラス実装ファイル 
 */
 
+#include "stdafx.h"
+#include "listener.hpp"
+#include "session.hpp"
 
-#include <memory>
-#include <exception>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/dispatch.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/config.hpp>
+namespace app::http_server {
 
-#include "./listener.hpp"
-
-namespace app::http {
-
-    namespace beast = boost::beast;
-    namespace http = boost::beast::http;           
-    namespace net = boost::asio;            
-    using tcp = boost::asio::ip::tcp; 
-
-    Listener::Listener(net::io_context& ioc, tcp::endpoint endpoint, std::shared_ptr<std::string const> doc_root) :
+    Listener::Listener(net::io_context& ioc, tcp::endpoint endpoint, std::shared_ptr<const std::string> doc_root) :
         ioc         (ioc),
         acceptor    (net::make_strand(ioc)),
         doc_root    (doc_root)
@@ -68,7 +55,8 @@ namespace app::http {
     void Listener::OnAccept(beast::error_code ec, tcp::socket socket){
         //エラーは無視
         if(!ec){
-            //セッションを生成する
+            //セッションを生成・実行する
+			std::make_shared<Session>(std::move(socket), this->doc_root)->Run();
         }
 
         //再び受付開始

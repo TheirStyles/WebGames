@@ -1,19 +1,10 @@
-/**
+﻿/**
 * @file main.cpp
 * @brief エントリーポイント定義ファイル
 */
 
-#include <iostream>
-#include <memory>
-#include <exception>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/dispatch.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/config.hpp>
-
-#include "./http_server/http_server.hpp"
+#include "stdafx.h"
+#include "http_server.hpp"
 
 /**
 * @brief エントリーポイント 
@@ -22,31 +13,34 @@
 * @return アプリケーション終了コード
 */
 int main(int args, char** argv){
-    namespace beast = boost::beast;       
-    namespace http = beast::http;         
-    namespace net = boost::asio;            
-    using tcp = boost::asio::ip::tcp;
-    using HttpServer = app::http::HttpServer;
 
     try {
         //コンテキスト生成
         net::io_context ioc(2);
 
         //サーバー作成
-        auto http_server = std::make_unique<HttpServer>(ioc);
+        auto http_server = std::make_unique<app::http_server::HttpServer>(ioc);
 
         //サーバー起動
         http_server->Run();
+		std::cout << "HTTP Serverを起動しました。" << std::endl;
 
         //リクエスト処理
         std::thread th1([&ioc] { ioc.run(); });
         std::thread th2([&ioc] { ioc.run(); });
         
         //キー入力で終了
+		std::cout << "キー入力でサーバー処理を終了します。" << std::endl;
         std::getc(stdin);
         http_server->Stop();
+		std::cout << "HTTP Serverが終了しました。" << std::endl;
+		ioc.stop();
+		std::cout << "メッセージ処理が終了しました。" << std::endl;
         th1.join();
+		std::cout << "スレッド1が終了しました。" << std::endl;
         th2.join();
+		std::cout << "スレッド2が終了しました。" << std::endl;
+		std::cout << "すべてのスレッドが終了しました。" << std::endl;
 
         //終了
         return EXIT_SUCCESS;
@@ -60,4 +54,7 @@ int main(int args, char** argv){
     catch(...){
         std::cout << "Happen Exception" << std::endl; 
     }
+
+	//異常終了
+	return EXIT_FAILURE;
 }

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file listener.hpp
  * @brief Listenerクラス定義ファイル
 */
@@ -6,19 +6,10 @@
 #ifndef WEBGAMES_LISTENER_HPP
 #define WEBGAMES_LISTENER_HPP
 
-#include <memory>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/dispatch.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/config.hpp>
+#include "stdafx.h"
 
-namespace app::http {
 
-    namespace http = boost::beast::http;           
-    namespace net = boost::asio;            
-    using tcp = boost::asio::ip::tcp; 
+namespace app::http_server {
 
     /**
      *  @class Listener
@@ -32,7 +23,7 @@ namespace app::http {
         Listener(Listener&&) = default;
         ~Listener() = default;
         Listener& operator=(const Listener&) = default;
-        Listener& operator=(const Listener&&) = default;
+        Listener& operator=(Listener&&) = default;
 
         /**
          * @brief コンストラクタ
@@ -41,12 +32,12 @@ namespace app::http {
          * @param doc_root ドキュメントルートのパス 
          * @exception エラー時にruntime_error
         */
-        Listener(net::io_context& ioc, tcp::endpoint endpoint, std::shared_ptr<std::string const> doc_root);
+        Listener(net::io_context& ioc, tcp::endpoint endpoint, std::shared_ptr<const std::string> doc_root);
 
     private:
         net::io_context& ioc;
         tcp::acceptor acceptor;
-        std::shared_ptr<std::string const> doc_root;
+        std::shared_ptr<const std::string> doc_root;
 
     private:
         /**

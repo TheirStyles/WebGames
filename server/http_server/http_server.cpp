@@ -1,32 +1,28 @@
-/**
+﻿/**
 * @file http_server.cpp
 * @brief HttpServer定義ファイル
 */
 
-#include <string>
-#include <memory>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/dispatch.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/config.hpp>
+#include "stdafx.h"
+#include "http_server.hpp"
 
-#include "./http_server.hpp"
-
-namespace http = boost::beast::http;           
-namespace net = boost::asio;            
-using tcp = boost::asio::ip::tcp; 
-
-namespace app::http {
+namespace app::http_server {
 
     HttpServer::HttpServer(net::io_context& ioc) :
         ioc         (ioc),
-        endpoint    (tcp::v4(), HttpServer::Port),
-        doc_root    (std::make_shared<std::string const>(HttpServer::doc_root)),
-        listener    (std::make_shared<Listener>(ioc, endpoint, doc_root))
+        endpoint    (tcp::v4(), HttpServer::PORT),
+        doc_root    (std::make_shared<const std::string>(HttpServer::DOC_ROOT)),
+        listener    (std::make_shared<Listener>(ioc, endpoint, this->doc_root))
     {
     }
+
+	HttpServer::HttpServer(net::io_context& ioc, const std::string& doc_root) :
+		ioc			(ioc),
+		endpoint	(tcp::v4(), HttpServer::PORT),
+		doc_root	(std::make_shared<const std::string>(doc_root)),
+		listener	(std::make_shared<Listener>(ioc, endpoint, this->doc_root))
+	{
+	}
 
     void HttpServer::Run() {
         this->listener->Run();

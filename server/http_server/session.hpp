@@ -1,29 +1,43 @@
-/**
+﻿/**
  * @file session.hpp
  * @brief Sessionクラス定義ファイル
 */
 
-#include <string>
-#include <memory>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/dispatch.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/config.hpp>
+#include "stdafx.h"
 
-namespace app::http {
-
-    namespace beast = boost::beast;
-    namespace http = boost::beast::http;           
-    namespace net = boost::asio;            
-    using tcp = boost::asio::ip::tcp; 
+namespace app::http_server {
 
     /**
      * @class Session
      * @brief 通信の一連処理
     */
     class Session : public std::enable_shared_from_this<Session> {
+	private:
+		/**
+		* @struct SendLamda
+		* @brief 送信用のラムダ
+		*/
+		struct SendLamda {
+			Session& self;	//!< セッション
+
+			/**
+			* @brief コンストラクタ
+			* @param self セッションクラス
+			*/
+			SendLamda(Session& self);
+
+			/**
+			* @brief メッセージを送信する
+			* @tparam メッセージがリクエストであるか
+			* @tparam メッセージのボディーの型
+			* @tparam メッセージのフィールドの型
+			* @param msg メッセージ
+			* @return none
+			*/
+			template<bool isRequest, class Body, class Fields>
+			void operator()(http::message<isRequest, Body, Fields>&& msg) const;
+		};
+
     public:
         Session() = delete;
         Session(const Session&) = default;
@@ -44,7 +58,8 @@ namespace app::http {
         beast::flat_buffer buffer;                      //!< 受信用バッファー
         std::shared_ptr<std::string const> doc_root;    //!< ドキュメントルートへのパス
         http::request<http::string_body> req;           //!< リクエスト情報
-        std::shared_ptr<void> res;                      //!< リソース情報
+        std::shared_ptr<void> res;                      //!< 送信するリソース情報
+		SendLamda send_lamda;							//!< 送信に利用するラムダ
 
     private:
         /**
@@ -72,8 +87,8 @@ namespace app::http {
          * @param send 送信用コールバック関数
          * @return none
         */
-       template<typename Body, typename Allocator, typename Send>
-       void HandleRequest(beast::string_view doc_root, http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send);
+		template<typename Body, typename Allocator, typename Send>
+		void HandleRequest(beast::string_view doc_root, http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send);
 
         /**
          * @brief 読み込み処理を開始する
