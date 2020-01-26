@@ -192,13 +192,12 @@ var start_button = null;
 
 /**
  * @brief スタート画面を表示する
+ * @param none
+ * @return none
  */
 function displayStart(){
     //再描画用の関数設定
     nowSceneDraw = displayStart;
-
-    //キャンバスサイズを調整
-    canvasResize(canvas);
 
     //背景画像描画
     drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
@@ -215,7 +214,7 @@ function displayStart(){
         }
     );
 
-    //前に配置したボタンが残っていれば
+    //resize時に呼ばれたとき、前に配置したボタンが残っていれば
     if(start_button != null){
         start_button.style.display = "none";
     }
@@ -230,13 +229,114 @@ function displayStart(){
     start_button.classList.add("btn-lg");
     start_button.classList.add("active");
     start_button.addEventListener('click', function(){
+        //ボタン削除
         start_button.style.display = "none";
+        
+        //次のシーンを呼び出す
+        displaySelectScene();
     })
     area.appendChild(start_button);
 
     //ボタンの横位置を調整 clientWidthを使うため、描画後に適用
     start_button.style.left  = canvas.width/2 - start_button.clientWidth/2 + 10 + "px"; 
 }
+
+
+
+/*****************************************************************************************************
+* 
+*  選択画面処理
+* 
+****************************************************************************************************/
+/**
+ * @var select_make_room
+ * @brief 選択ボタン1 部屋の作成
+ */
+var select_make_room = null;
+
+/**
+ * @var select_join_room
+ * @brief 選択ボタン2 部屋に参加
+ */
+var select_join_room = null;
+
+/**
+ * @brief 選択画面を表示する
+ * @param none
+ * @return none
+ */
+function displaySelectScene(){
+    //再描画用の関数設定
+    nowSceneDraw = displayStart;
+
+    //背景画像描画
+    drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
+        //描画完了後
+        function() {
+            //背景にフィルター
+            setCanvasShade(-100);
+
+            //タイトル描画
+            ctx.font = 'bold 30pt sans-serif';
+            ctx.fillStyle = "white";
+            ctx.textAlign = "center";
+            ctx.fillText("参加方法", canvas.width / 2, 150);
+        }
+    );
+    
+    //resize時に呼ばれたとき、前に配置したボタンが残っていれば
+    if(select_make_room != null){
+        select_make_room.style.display = "none";
+    }
+    if(select_join_room != null){
+        select_join_room.style.display = "none";
+    }
+
+    //ボタンサイズ
+    let width = canvas.width * 8/10;
+
+    //部屋の作成ボタンを配置
+    select_make_room = document.createElement("BUTTON");
+    select_make_room.innerText        = "部屋を作成する";
+    select_make_room.style.position   = "absolute";
+    select_make_room.style.top        = canvas.height - 300 + "px";
+    select_make_room.style.width      = width + "px";
+    select_make_room.classList.add("btn");
+    select_make_room.classList.add("btn-primary");
+    select_make_room.classList.add("btn-lg");
+    select_make_room.classList.add("active");
+    select_make_room.addEventListener('click', function(){
+        //ボタン削除
+        select_make_room.style.display = "none";
+        select_join_room.style.display = "none";
+        
+        //次のシーンを呼び出す
+    })
+    area.appendChild(select_make_room);
+    select_make_room.style.left  = canvas.width/2 - select_make_room.clientWidth/2 + 10 + "px"; 
+
+    
+    //部屋への参加ボタンを配置
+    select_join_room = document.createElement("BUTTON");
+    select_join_room.innerText        = "部屋を探す";
+    select_join_room.style.position   = "absolute";
+    select_join_room.style.top        = canvas.height - 200 + "px";
+    select_join_room.style.width      = width + "px";
+    select_join_room.classList.add("btn");
+    select_join_room.classList.add("btn-primary");
+    select_join_room.classList.add("btn-lg");
+    select_join_room.classList.add("active");
+    select_join_room.addEventListener('click', function(){
+        //ボタン削除
+        select_make_room.style.display = "none";
+        select_join_room.style.display = "none";
+        
+        //次のシーンを呼び出す
+    })
+    area.appendChild(select_join_room);
+    select_join_room.style.left  = canvas.width/2 - select_join_room.clientWidth/2 + 10 + "px"; 
+}
+
 
 /*****************************************************************************************************
 * 
@@ -248,6 +348,9 @@ window.addEventListener('resize', function(){
     canvasResize(canvas);
     nowSceneDraw();
 });
+
+//キャンバスサイズを調整
+canvasResize(canvas);
 
 //処理開始
 displayStart();

@@ -3,16 +3,8 @@ body {
     width: 100vw; /*画面サイズ固定*/
 }
 
-#game_area {
-    text-align: center;
-}
-
 #canvas {
     width : 100%;
     height: 480px;
 }
 
-#start_button {
-    position: relative;
-    display: inline-block;
-}
