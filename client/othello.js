@@ -25,14 +25,8 @@ var ctx = canvas.getContext("2d");
  * @var socket
  * @brief ソケット
  */
-var socket = null;
-
-/**
- * @var SERVER_URL
- * @brief 通信サーバーのIP
- */
+var socket = new WebSocket('wss://'+ "echo.websocket.org");
 //const SERVER_URL = 'ws://' + location.host + ':8080';
-const SERVER_URL = 'wss://'+ "echo.websocket.org";
 
 /**
  * @var nowSceneDraw
@@ -154,6 +148,31 @@ function setCanvasShade(diff){
 }
 
 /**
+ * @breif キャンバスの一部分の明暗を変更する
+ * @param diff 加算する値
+ * @param x 左上のx座標
+ * @param y 左上のy座標
+ * @param width 変更する範囲の横幅
+ * @param height 変更する範囲の縦幅
+ * @return none 
+ */
+function setPartOfCanvasShade(diff, x, y, width, height){
+    //キャンバスのピクセル取得
+    var pixels = ctx.getImageData(x, y, width, height);
+    var d = pixels.data;
+    
+    //rgbを加算
+    for (var i = 0; i < d.length; i+=4) {
+        d[i]   += diff;  // r
+        d[i+1] += diff;  // g
+        d[i+2] += diff;  // b
+    }
+
+    //ピクセルデータを上書き
+    ctx.putImageData(pixels, x, y);
+}
+
+/**
  * @brief 盤面を表示する
  * @param board 盤面の情報
  */
@@ -240,13 +259,30 @@ function displayError(msg = "エラーが発生しました"){
 var start_button = null;
 
 /**
+ * @var displayStartSceneDOMClear
+ * @brief スタート画面のDOMを全て削除する
+ */
+function displayStartSceneClear() {
+    if(start_button != null){
+        start_button.style.display = "none";
+        start_button = null;
+    }
+}
+
+/**
  * @brief スタート画面を表示する
  * @param none
  * @return none
  */
 function displayStartScene(){
     //再描画用の関数設定
-    nowSceneDraw = displayStartScene;
+    nowSceneDraw = function() {
+        //再描画時に残る、DOMをクリアしておく
+        displayStartSceneClear();
+
+        //再描画
+        displayStartScene();
+    }
 
     //背景画像描画
     drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
@@ -263,11 +299,6 @@ function displayStartScene(){
         }
     );
 
-    //resize時に呼ばれたとき、前に配置したボタンが残っていれば
-    if(start_button != null){
-        start_button.style.display = "none";
-    }
-
     //開始ボタン配置
     start_button = document.createElement("BUTTON");
     start_button.innerText        = "Start Game";
@@ -278,8 +309,8 @@ function displayStartScene(){
     start_button.classList.add("btn-lg");
     start_button.classList.add("active");
     start_button.addEventListener('click', function(){
-        //ボタン削除
-        start_button.style.display = "none";
+        //DOM削除
+        displayStartSceneClear();
         
         //次のシーンを呼び出す
         displayNicknameScene();
@@ -309,6 +340,21 @@ var nickname_input_form = null;
  */
 var nickname_submit = null;
 
+/**
+ * @brief ニックネーム入力画面のDOMをすべて削除する
+ * @param none
+ * @return none
+ */
+function displayNicknameSceneDOMClear() {
+    if(nickname_input_form != null){
+        nickname_input_form.style.display = "none";
+        nickname_input_form = null;
+    }
+    if(nickname_submit != null){
+        nickname_submit.style.display = "none";
+        nickname_submit = null;
+    }
+}
 
 /**
  * @brief ニックネーム入力画面を表示する
@@ -317,7 +363,10 @@ var nickname_submit = null;
  */
 function displayNicknameScene(){
     //再描画用の関数設定
-    nowSceneDraw = displayNicknameScene;
+    nowSceneDraw = function() {
+        displayNicknameSceneDOMClear();
+        displayNicknameScene();
+    }
 
     //背景画像描画
     drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
@@ -334,14 +383,6 @@ function displayNicknameScene(){
         }
     );
 
-     //resize時に呼ばれたとき、前に配置したDOMが残っていれば
-     if(nickname_input_form != null){
-        nickname_input_form.style.display = "none";
-    }
-    if(nickname_submit != null){
-        nickname_submit.style.display = "none";
-    }
-
     //入力フォーム配置
     nickname_input_form = document.createElement("INPUT");
     nickname_input_form.style.position   = "absolute";
@@ -350,9 +391,6 @@ function displayNicknameScene(){
     nickname_input_form.setAttribute("type", "text");
     nickname_input_form.setAttribute("value", nickname);
     nickname_input_form.classList.add("form-control");
-    nickname_input_form.addEventListener('change', function(){
-
-    });
     area.appendChild(nickname_input_form);
     nickname_input_form.style.left  = canvas.width*1/8 + "px"; 
 
@@ -376,9 +414,11 @@ function displayNicknameScene(){
         //ニックネーム保存
         nickname = nickname_input_form.value;
 
-        //ボタン削除
-        nickname_input_form.style.display = "none";
-        nickname_submit.style.display = "none";
+        //DOM削除
+        displayNicknameSceneDOMClear();
+
+        //ニックネームデータをサーバーに送信
+        socket.send("NICKNAME : " + nickname);
         
         //次のシーンを呼び出す
         displaySelectScene();
@@ -412,13 +452,36 @@ var select_join_room = null;
 var select_back_button = null;
 
 /**
+ * @brief 選択画面のDOMをすべて削除する
+ * @param none
+ * @return none
+ */
+function displaySelectSceneDOMClear(){
+    if(select_make_room != null){
+        select_make_room.style.display = "none";
+        select_make_room = null;
+    }
+    if(select_join_room != null){
+        select_join_room.style.display = "none";
+        select_join_room = null;
+    }
+    if(select_back_button != null){
+        select_back_button.style.display = "none";
+        select_back_button = null;
+    }
+}
+
+/**
  * @brief 選択画面を表示する
  * @param none
  * @return none
  */
 function displaySelectScene(){
     //再描画用の関数設定
-    nowSceneDraw = displaySelectScene;
+    nowSceneDraw = function() {
+        displaySelectSceneDOMClear();
+        displaySelectScene();
+    }
 
     //背景画像描画
     drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
@@ -434,17 +497,6 @@ function displaySelectScene(){
             ctx.fillText("参加方法", canvas.width / 2, 150);
         }
     );
-    
-    //resize時に呼ばれたとき、前に配置したボタンが残っていれば
-    if(select_make_room != null){
-        select_make_room.style.display = "none";
-    }
-    if(select_join_room != null){
-        select_join_room.style.display = "none";
-    }
-    if(select_back_button != null){
-        select_back_button.style.display = "none";
-    }
 
     //ボタンサイズ
     let width = canvas.width * 8/10;
@@ -461,9 +513,7 @@ function displaySelectScene(){
     select_make_room.classList.add("active");
     select_make_room.addEventListener('click', function(){
         //ボタン削除
-        select_make_room.style.display = "none";
-        select_join_room.style.display = "none";
-        select_back_button.style.display = "none";
+        displaySelectSceneDOMClear();
         
         //次のシーンを呼び出す
         displayMakeRoom();
@@ -483,9 +533,7 @@ function displaySelectScene(){
     select_join_room.classList.add("active");
     select_join_room.addEventListener('click', function(){
         //ボタン削除
-        select_make_room.style.display = "none";
-        select_join_room.style.display = "none";
-        select_back_button.style.display = "none";
+        displaySelectSceneDOMClear();
         
         //次のシーンを呼び出す
     })
@@ -503,9 +551,7 @@ function displaySelectScene(){
     select_back_button.classList.add("active");
     select_back_button.addEventListener('click', function(){
         //ボタン削除
-        select_make_room.style.display = "none";
-        select_join_room.style.display = "none";
-        select_back_button.style.display = "none";
+        displaySelectSceneDOMClear();
         
         //次のシーンを呼び出す
         displayNicknameScene();
@@ -540,13 +586,32 @@ var make_room_join_button = null;
 var match_player_message = null;
 
 /**
+ * @brief 部屋の作成画面のDOMを全て削除する
+ * @param none
+ * @return none
+ */
+function displayMakeRoomDOMClear() {
+    if(make_room_back_button != null) {
+        make_room_back_button.style.display = "none";
+        make_room_back_button = null;
+    }
+    if(make_room_join_button != null){
+        make_room_join_button.style.display = "none";
+        make_room_join_button = null;
+    }
+}
+
+/**
  * @brief 部屋の作成画面を表示する
  * @param none
  * @return none
  */
 function displayMakeRoom(){
     //再描画用の関数設定
-    nowSceneDraw = displayMakeRoom;
+    nowSceneDraw = function() {
+        displayMakeRoomDOMClear();
+        displayMakeRoom();
+    }
 
     //背景画像描画
     drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
@@ -563,11 +628,6 @@ function displayMakeRoom(){
         }
     );
 
-    //resize時に呼ばれたとき、前に配置したボタンが残っていれば
-    if(make_room_back_button != null){
-        make_room_back_button.style.display = "none";
-    }
-
     //戻るボタンを配置
     make_room_back_button = document.createElement("BUTTON");
     make_room_back_button.innerText        = "戻る";
@@ -579,7 +639,7 @@ function displayMakeRoom(){
     make_room_back_button.classList.add("active");
     make_room_back_button.addEventListener('click', function(){
         //ボタン削除
-        make_room_back_button.style.display = "none";
+        displayMakeRoomDOMClear();
         
         //次のシーンを呼び出す
         displaySelectScene();
@@ -587,25 +647,14 @@ function displayMakeRoom(){
     area.appendChild(make_room_back_button);
     make_room_back_button.style.left  = canvas.width/2 - make_room_back_button.clientWidth/2 + 10 + "px"; 
 
-    //ソケットが残っていれば
-    if(socket != null){
-        socket.onclose = function(){};
-        socket.close();
-    }
-
-    //ソケット作成
-    socket = new WebSocket(SERVER_URL)
-
-    //接続時
-    socket.onopen = function(e){
-        //部屋探しを通知
-        socket.send("SearchRoom");
-    }
-
     //受信時(再描画用に登録前にonMessageを作成しておく)
     onMessage = function(e=null){
         //再描画用に登録
-        nowSceneDraw = onMessage;
+        nowSceneDraw = function() {    
+            displayMakeRoomDOMClear();
+            displayMakeRoom();
+            onMessage();
+        };
 
         //再描画用の記録変数
         match_player_message = (e == null ? match_player_message : e.data);
@@ -623,6 +672,9 @@ function displayMakeRoom(){
                 ctx.textAlign = "center";
                 ctx.fillText("対戦相手が見つかりました", canvas.width / 2, 150);
 
+                //テキスト表示部分を暗くする
+                setPartOfCanvasShade(-50, canvas.width/10, canvas.height/3 + canvas.height/10, canvas.width * 8/10, canvas.height/5);
+
                 //相手情報表示
                 ctx.fillText(match_player_message, canvas.width / 2, 260);
             }
@@ -631,11 +683,11 @@ function displayMakeRoom(){
         //戻るボタン位置変更
         make_room_back_button.style.left = canvas.width/4 - make_room_back_button.clientWidth/2 + 10 + "px"; 
 
-        //resize時に呼ばれたとき、前に配置したボタンが残っていれば
+        //処理ずれで、DOM削除前に追加されることがあるため記述しておく
         if(make_room_join_button != null){
             make_room_join_button.style.display = "none";
         }
-
+        
         //決定ボタン追加
         make_room_join_button = document.createElement("BUTTON");
         make_room_join_button.innerText        = "決定";
@@ -647,8 +699,7 @@ function displayMakeRoom(){
         make_room_join_button.classList.add("active");
         make_room_join_button.addEventListener('click', function(){
             //ボタン削除
-            make_room_back_button.style.display = "none";
-            make_room_join_button.style.display = "none";
+            displayMakeRoomDOMClear();
             
             //次のシーンを呼び出す
             //TODO
@@ -662,6 +713,10 @@ function displayMakeRoom(){
     socket.onclose = function(e){
         //ボタン削除
         make_room_back_button.style.display = "none";
+        //make_room_join_buttonは存在しない可能性があるため、nullチェック
+        if(make_room_join_button != null){
+            make_room_join_button.style.display = "none";
+        }
 
         //エラー表示へ
         displayError("サーバーとの接続が途切れました");
@@ -671,11 +726,17 @@ function displayMakeRoom(){
     socket.onerror = function(error){
         //ボタン削除
         make_room_back_button.style.display = "none";
+        //make_room_join_buttonは存在しない可能性があるため、nullチェック
+        if(make_room_join_button != null){
+            make_room_join_button.style.display = "none";
+        }
 
         //エラー表示へ
         displayError("サーバーとの接続中にエラーが発生しました");
     };
-    
+
+    //部屋作成をサーバーに通知
+    socket.send("SELECT : MakeRoom");
 }
 
 
@@ -695,7 +756,10 @@ function displayMakeRoom(){
 ****************************************************************************************************/
 //ウィンドウ変更時のイベント登録
 window.addEventListener('resize', function(){
+    //コンテキストサイズ調整
     canvasResize(canvas);
+
+    //再描画
     nowSceneDraw();
 });
 
