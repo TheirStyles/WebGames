@@ -1201,12 +1201,12 @@ function displayOthelloScene() {
         value = OthelloState.blank;
     })
 
-    nowSceneDraw();
-
     //ソケットの受信時設定
     socket.onmessage = function(e){
         //メッセージ解析
         let msg = e.data.splite(":");
+
+        //開始宣言
 
         //盤面描画
         if(msg[0]=="BOARD"){
@@ -1234,6 +1234,11 @@ function displayOthelloScene() {
     };
 
     //TODO マウス入力時処理
+    window.addEventListener('mousedown', function(e){
+
+    });
+
+    nowSceneDraw();
 }
 
 
