@@ -313,7 +313,7 @@ function displayStartScene(){
         displayStartSceneClear();
         
         //次のシーンを呼び出す
-        displayNicknameScene();
+        displayConnectingScene();
     })
     area.appendChild(start_button);
 
@@ -322,6 +322,43 @@ function displayStartScene(){
 }
 
 
+
+/*****************************************************************************************************
+* 
+*  通信確立処理
+* 
+****************************************************************************************************/
+/**
+ * @var displayConnectingScene
+ * @brief 通信確立画面を表示する
+ * @return none
+ */
+function displayConnectingScene(){
+
+    //再描画用の関数設定
+    nowSceneDraw = function () {
+        drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
+            //描画完了後
+            function() {
+                //背景にフィルター
+                setCanvasShade(-100);
+
+                //タイトル描画
+                ctx.font = 'bold 20pt sans-serif';
+                ctx.fillStyle = "white";
+                ctx.textAlign = "center";
+                ctx.fillText("サーバーと通信中です...", canvas.width / 2, 280);
+            }
+        );
+    }
+
+    //描画
+    nowSceneDraw();
+
+    //通信が確立したら、次のシーンに進むようにする
+    socket.onopen = displayNicknameScene;
+
+}
 
 /*****************************************************************************************************
 * 
@@ -889,12 +926,9 @@ function displaySearchRoomScene(){
                     handleEvent : function(event){
                         //ボタン削除
                         displaySearchRoomDOMClear();
-                        
-                        //結果送信
-                        socket.send("TargetPlayer : " + this.send_value);
 
                         //次のシーンを呼び出す
-                        waitMatchPlayerScene();
+                        waitMatchPlayerScene("TargetPlayer : " + this.send_value);
                 }
             });
             item.appendChild(made_button);
@@ -939,11 +973,57 @@ function displaySearchRoomScene(){
 ****************************************************************************************************/
 /**
  * @brief  相手プレイヤーの入力待機画面を表示する
- * @param none
+ * @param send_msg サーバーに送信する部屋の選択結果
  * @return none
  */
-function waitMatchPlayerScene(){
+function waitMatchPlayerScene(send_msg){
+    //再描画用に描画処理を関数化
+    nowSceneDraw = function() {
+        //背景画像描画
+        drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
+            //描画完了後
+            function() {
+                //背景にフィルター
+                setCanvasShade(-100);
 
+                //タイトル描画
+                ctx.font = 'bold 20pt sans-serif';
+                ctx.fillStyle = "white";
+                ctx.textAlign = "center";
+                ctx.fillText("相手の入力待機中...", canvas.width / 2, 280);
+            }
+        );
+    };
+
+    //描画
+    nowSceneDraw();
+
+    //ソケットの受信処理登録
+    socket.onmessage = function(e){
+        let msg = e.data.split(":");
+        if(msg[0] == undefined || msg[1] == undefined){
+            return;
+        }
+        if(msg[0] == "PREPARED" && msg[1] == "OK"){
+            console.log(e.data);
+            //次のシーンへ
+        }
+    }
+
+    //切断時
+    socket.onclose = function(e){
+        //エラー表示へ
+        displayError("サーバーとの接続が途切れました");
+    };
+
+    //エラー時
+    socket.onerror = function(error){
+        //エラー表示へ
+        displayError("サーバーとの接続中にエラーが発生しました");
+    };
+
+    //データ送信
+    socket.send(send_msg);
 }
 
 
