@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!--文字コード設定-->
+    <meta charset="utf-8">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    
+    <!--タイトル-->
+    <title>othello game</title>
+
+</head>
+
+<body>
+    <div id="page">
+
+        <header>
+            <nav class="navbar navbar-default">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#gnavi">
+                    <span class="sr-only">メニュー</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div id="gnavi" class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav">
+                    <li><a href="">Link1</a></li>
+                    <li><a href="">Link2</a></li>
+                    <li><a href="">Link3</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </header>
+
+        <div id="content">
+            <div id="main">
+                <!--ゲームタイトル-->
+                <h2>オセロ</h2>
+
+                <!--ゲーム領域-->
+                <div id="gameArea">
+
+                    <!--ゲーム表示-->
+                    <div id="gameBoard">
+                        <!--ゲーム表示-->
+                        <canvas id="canvas"></canvas>
+                    </div>
+                   
+                    <!--ゲーム説明-->
+                    <div id="howToPlay">
+                        <section>
+                            <h3>ゲーム説明</h3>
+                            <ul>
+                                <li>dumy</li>
+                            </ul>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+    <!--ゲーム処理用JavaScript-->
+    <script type="text/javascript" src="othello.js"></script>
+        
+</body>
+
+</html>
