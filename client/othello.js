@@ -33,6 +33,12 @@ var socket = new WebSocket('ws://'+ location.host + ':8080');
  */
 var nowSceneDraw = function(){};
 
+/**
+ * @var nickname
+ * @brief ニックネーム
+ */
+var nickname = "no name";
+
 /*****************************************************************************************************
  * 
  *  列挙体
@@ -233,7 +239,7 @@ function displayStart(){
         start_button.style.display = "none";
         
         //次のシーンを呼び出す
-        displaySelectScene();
+        displayNicknameScene();
     })
     area.appendChild(start_button);
 
@@ -241,6 +247,102 @@ function displayStart(){
     start_button.style.left  = canvas.width/2 - start_button.clientWidth/2 + 10 + "px"; 
 }
 
+
+
+/*****************************************************************************************************
+* 
+*  ニックネーム入力処理
+* 
+****************************************************************************************************/
+/**
+ * @var nickname_input_form
+ * @brief ニックネーム入力フォーム
+ */
+var nickname_input_form = null;
+
+/**
+ * @var nickname_submit
+ * @brief ニックネーム決定ボタン
+ */
+var nickname_submit = null;
+
+
+/**
+ * @brief ニックネーム入力画面を表示する
+ * @param none
+ * @return none
+ */
+function displayNicknameScene(){
+    //再描画用の関数設定
+    nowSceneDraw = displayNicknameScene;
+
+    //背景画像描画
+    drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
+        //描画完了後
+        function() {
+            //背景にフィルター
+            setCanvasShade(-100);
+
+            //タイトル描画
+            ctx.font = 'bold 20pt sans-serif';
+            ctx.fillStyle = "white";
+            ctx.textAlign = "center";
+            ctx.fillText("ニックネームを入力してください", canvas.width / 2, 150);
+        }
+    );
+
+     //resize時に呼ばれたとき、前に配置したDOMが残っていれば
+     if(nickname_input_form != null){
+        nickname_input_form.style.display = "none";
+    }
+    if(nickname_submit != null){
+        nickname_submit.style.display = "none";
+    }
+
+    //入力フォーム配置
+    nickname_input_form = document.createElement("INPUT");
+    nickname_input_form.style.position   = "absolute";
+    nickname_input_form.style.top        = canvas.height - 280 + "px";
+    nickname_input_form.style.width      = canvas.clientWidth * 4/5 + "px";
+    nickname_input_form.setAttribute("type", "text");
+    nickname_input_form.setAttribute("value", nickname);
+    nickname_input_form.classList.add("form-control");
+    nickname_input_form.addEventListener('change', function(){
+
+    });
+    area.appendChild(nickname_input_form);
+    nickname_input_form.style.left  = canvas.width*1/8 + "px"; 
+
+    //ボタン配置
+    nickname_submit = document.createElement("BUTTON");
+    nickname_submit.innerText        = "決定";
+    nickname_submit.style.position   = "absolute";
+    nickname_submit.style.top        = canvas.height - 200 + "px";
+    nickname_submit.style.width      = canvas.clientWidth/5 + "px";
+    nickname_submit.classList.add("btn");
+    nickname_submit.classList.add("btn-primary");
+    nickname_submit.classList.add("btn-lg");
+    nickname_submit.classList.add("active");
+    nickname_submit.addEventListener('click', function(){
+        //入力チェック
+        if(nickname_input_form.value == ""){
+            alert("ニックネームが入力されていません。");
+            return;
+        }
+
+        //ニックネーム保存
+        nickname = nickname_input_form.value;
+
+        //ボタン削除
+        nickname_input_form.style.display = "none";
+        nickname_submit.style.display = "none";
+        
+        //次のシーンを呼び出す
+        displaySelectScene();
+    })
+    area.appendChild(nickname_submit);
+    nickname_submit.style.left  = canvas.width/2 - nickname_submit.clientWidth/2 + 10 + "px"; 
+}
 
 
 /*****************************************************************************************************
@@ -261,13 +363,19 @@ var select_make_room = null;
 var select_join_room = null;
 
 /**
+ * @var select_back_button
+ * @brief 戻るボタン
+ */
+var select_back_button = null;
+
+/**
  * @brief 選択画面を表示する
  * @param none
  * @return none
  */
 function displaySelectScene(){
     //再描画用の関数設定
-    nowSceneDraw = displayStart;
+    nowSceneDraw = displaySelectScene;
 
     //背景画像描画
     drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
@@ -291,6 +399,9 @@ function displaySelectScene(){
     if(select_join_room != null){
         select_join_room.style.display = "none";
     }
+    if(select_back_button != null){
+        select_back_button.style.display = "none";
+    }
 
     //ボタンサイズ
     let width = canvas.width * 8/10;
@@ -309,12 +420,12 @@ function displaySelectScene(){
         //ボタン削除
         select_make_room.style.display = "none";
         select_join_room.style.display = "none";
+        select_back_button.style.display = "none";
         
         //次のシーンを呼び出す
     })
     area.appendChild(select_make_room);
     select_make_room.style.left  = canvas.width/2 - select_make_room.clientWidth/2 + 10 + "px"; 
-
     
     //部屋への参加ボタンを配置
     select_join_room = document.createElement("BUTTON");
@@ -330,11 +441,44 @@ function displaySelectScene(){
         //ボタン削除
         select_make_room.style.display = "none";
         select_join_room.style.display = "none";
+        select_back_button.style.display = "none";
         
         //次のシーンを呼び出す
     })
     area.appendChild(select_join_room);
     select_join_room.style.left  = canvas.width/2 - select_join_room.clientWidth/2 + 10 + "px"; 
+
+    //戻るボタンを配置
+    select_back_button = document.createElement("BUTTON");
+    select_back_button.innerText        = "戻る";
+    select_back_button.style.position   = "absolute";
+    select_back_button.style.top        = canvas.height - 100 + "px";
+    select_back_button.classList.add("btn");
+    select_back_button.classList.add("btn-warning");
+    select_back_button.classList.add("btn-lg");
+    select_back_button.classList.add("active");
+    select_back_button.addEventListener('click', function(){
+        //ボタン削除
+        select_make_room.style.display = "none";
+        select_join_room.style.display = "none";
+        select_back_button.style.display = "none";
+        
+        //次のシーンを呼び出す
+        displayNicknameScene();
+    })
+    area.appendChild(select_back_button);
+    select_back_button.style.left  = canvas.width/2 - select_back_button.clientWidth/2 + 10 + "px"; 
+}
+
+
+
+/*****************************************************************************************************
+* 
+*  部屋の作成処理
+* 
+****************************************************************************************************/
+function displayMakeRoom(){
+    
 }
 
 
@@ -349,7 +493,7 @@ window.addEventListener('resize', function(){
     nowSceneDraw();
 });
 
-//キャンバスサイズを調整
+//キャンバス内部サイズを調整
 canvasResize(canvas);
 
 //処理開始
