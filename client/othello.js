@@ -516,7 +516,7 @@ function displaySelectScene(){
         displaySelectSceneDOMClear();
         
         //次のシーンを呼び出す
-        displayMakeRoom();
+        displayMakeRoomScene();
     })
     area.appendChild(select_make_room);
     select_make_room.style.left  = canvas.width/2 - select_make_room.clientWidth/2 + 10 + "px"; 
@@ -536,6 +536,7 @@ function displaySelectScene(){
         displaySelectSceneDOMClear();
         
         //次のシーンを呼び出す
+        displaySearchRoomScene()
     })
     area.appendChild(select_join_room);
     select_join_room.style.left  = canvas.width/2 - select_join_room.clientWidth/2 + 10 + "px"; 
@@ -606,53 +607,63 @@ function displayMakeRoomDOMClear() {
  * @param none
  * @return none
  */
-function displayMakeRoom(){
+function displayMakeRoomScene(){
+    //再描画用に描画処理を関数化
+    let drawBackground = function() {
+        //背景画像描画
+        drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
+            //描画完了後
+            function() {
+                //背景にフィルター
+                setCanvasShade(-100);
+
+                //タイトル描画
+                ctx.font = 'bold 20pt sans-serif';
+                ctx.fillStyle = "white";
+                ctx.textAlign = "center";
+                ctx.fillText("相手の参加待ちを行っています", canvas.width / 2, 150);
+            }
+        );
+    };
+    //再描画用に戻るボタンの作成を関数化
+    let createBackButton = function(){
+        //戻るボタンを配置
+        make_room_back_button = document.createElement("BUTTON");
+        make_room_back_button.innerText        = "戻る";
+        make_room_back_button.style.position   = "absolute";
+        make_room_back_button.style.top        = canvas.height - 100 + "px";
+        make_room_back_button.classList.add("btn");
+        make_room_back_button.classList.add("btn-warning");
+        make_room_back_button.classList.add("btn-lg");
+        make_room_back_button.classList.add("active");
+        make_room_back_button.addEventListener('click', function(){
+            //ボタン削除
+            displayMakeRoomDOMClear();
+            
+            //次のシーンを呼び出す
+            displaySelectScene();
+        })
+        area.appendChild(make_room_back_button);
+        make_room_back_button.style.left  = canvas.width/2 - make_room_back_button.clientWidth/2 + 10 + "px"; 
+    };
+
+    //描画
+    drawBackground();
+    createBackButton();
+
     //再描画用の関数設定
     nowSceneDraw = function() {
         displayMakeRoomDOMClear();
-        displayMakeRoom();
+        drawBackground();
+        createBackButton();
     }
 
-    //背景画像描画
-    drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
-        //描画完了後
-        function() {
-            //背景にフィルター
-            setCanvasShade(-100);
-
-            //タイトル描画
-            ctx.font = 'bold 20pt sans-serif';
-            ctx.fillStyle = "white";
-            ctx.textAlign = "center";
-            ctx.fillText("相手の参加待ちを行っています", canvas.width / 2, 150);
-        }
-    );
-
-    //戻るボタンを配置
-    make_room_back_button = document.createElement("BUTTON");
-    make_room_back_button.innerText        = "戻る";
-    make_room_back_button.style.position   = "absolute";
-    make_room_back_button.style.top        = canvas.height - 100 + "px";
-    make_room_back_button.classList.add("btn");
-    make_room_back_button.classList.add("btn-warning");
-    make_room_back_button.classList.add("btn-lg");
-    make_room_back_button.classList.add("active");
-    make_room_back_button.addEventListener('click', function(){
-        //ボタン削除
-        displayMakeRoomDOMClear();
-        
-        //次のシーンを呼び出す
-        displaySelectScene();
-    })
-    area.appendChild(make_room_back_button);
-    make_room_back_button.style.left  = canvas.width/2 - make_room_back_button.clientWidth/2 + 10 + "px"; 
-
-    //受信時(再描画用に登録前にonMessageを作成しておく)
-    onMessage = function(e=null){
+    //ソケットの受信時設定
+    let onMessage = function(e=null){
         //再描画用に登録
         nowSceneDraw = function() {    
             displayMakeRoomDOMClear();
-            displayMakeRoom();
+            createBackButton();
             onMessage();
         };
 
@@ -682,11 +693,6 @@ function displayMakeRoom(){
 
         //戻るボタン位置変更
         make_room_back_button.style.left = canvas.width/4 - make_room_back_button.clientWidth/2 + 10 + "px"; 
-
-        //処理ずれで、DOM削除前に追加されることがあるため記述しておく
-        if(make_room_join_button != null){
-            make_room_join_button.style.display = "none";
-        }
         
         //決定ボタン追加
         make_room_join_button = document.createElement("BUTTON");
@@ -712,11 +718,7 @@ function displayMakeRoom(){
     //切断時
     socket.onclose = function(e){
         //ボタン削除
-        make_room_back_button.style.display = "none";
-        //make_room_join_buttonは存在しない可能性があるため、nullチェック
-        if(make_room_join_button != null){
-            make_room_join_button.style.display = "none";
-        }
+        displayMakeRoomDOMClear();
 
         //エラー表示へ
         displayError("サーバーとの接続が途切れました");
@@ -725,11 +727,7 @@ function displayMakeRoom(){
     //エラー時
     socket.onerror = function(error){
         //ボタン削除
-        make_room_back_button.style.display = "none";
-        //make_room_join_buttonは存在しない可能性があるため、nullチェック
-        if(make_room_join_button != null){
-            make_room_join_button.style.display = "none";
-        }
+        displayMakeRoomDOMClear();
 
         //エラー表示へ
         displayError("サーバーとの接続中にエラーが発生しました");
@@ -744,6 +742,191 @@ function displayMakeRoom(){
 /*****************************************************************************************************
 * 
 *  部屋の参加処理
+* 
+****************************************************************************************************/
+/**
+ * @var search_room_back_button
+ * @brief 戻るボタン
+ */
+var search_room_back_button = null;
+
+/**
+ * @var search_room_players_list
+ * @brief 各プレイヤー情報を表示するリスト
+ */
+var search_room_players_list = null;
+
+/**
+ * @var serach_player_message
+ * @brief 再描画時にメッセージを再利用するための変数
+ */
+var serach_player_message = null;
+
+/**
+ * @brief 部屋の参加画面のDOMを全て削除する
+ * @param none
+ * @return none
+ */
+function displaySearchRoomDOMClear() {
+    if(search_room_back_button != null) {
+        search_room_back_button.style.display = "none";
+        search_room_back_button = null;
+    }
+    if(search_room_players_list != null){
+        search_room_players_list.style.display = "none";
+        search_room_players_list = null;
+    }
+}
+
+/**
+ * @brief 部屋の参加画面を表示する
+ * @param none
+ * @return none
+ */
+function displaySearchRoomScene(){
+     //再描画用に描画処理を関数化
+     let drawBackground = function() {
+        //背景画像描画
+        drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
+            //描画完了後
+            function() {
+                //背景にフィルター
+                setCanvasShade(-100);
+
+                //タイトル描画
+                ctx.font = 'bold 20pt sans-serif';
+                ctx.fillStyle = "white";
+                ctx.textAlign = "center";
+                ctx.fillText("現在の部屋リスト", canvas.width / 2, 150);
+            }
+        );
+    };
+    //再描画用に戻るボタンの作成を関数化
+    let createBackButton = function(){
+        //戻るボタンを配置
+        search_room_back_button = document.createElement("BUTTON");
+        search_room_back_button.innerText        = "戻る";
+        search_room_back_button.style.position   = "absolute";
+        search_room_back_button.style.top        = canvas.height - 100 + "px";
+        search_room_back_button.classList.add("btn");
+        search_room_back_button.classList.add("btn-warning");
+        search_room_back_button.classList.add("btn-lg");
+        search_room_back_button.classList.add("active");
+        search_room_back_button.addEventListener('click', function(){
+            //ボタン削除
+            displaySearchRoomDOMClear();
+            
+            //次のシーンを呼び出す
+            displaySelectScene();
+        })
+        area.appendChild(search_room_back_button);
+        search_room_back_button.style.left  = canvas.width/2 - search_room_back_button.clientWidth/2 + 10 + "px"; 
+    };
+
+    //描画
+    drawBackground();
+    createBackButton();
+
+    //再描画用の関数設定
+    nowSceneDraw = function() {
+        displaySearchRoomDOMClear();
+        drawBackground();
+        createBackButton();
+    }
+
+    //ソケットの受信時設定
+    let onMessage = function(e=null){
+        //再描画用に登録
+        nowSceneDraw = function() {    
+            displaySearchRoomDOMClear();
+            drawBackground();
+            createBackButton();
+            onMessage();
+        };
+
+        //リストを更新
+        if(e!=null){
+            //メッセージの種類を切り出し
+            let temp = e.data.split(':');
+            if(temp[1]==undefined){
+                return;
+            }
+
+            //リストに分割
+            serach_player_message = temp[1].split(',');
+        }
+
+        //リストのDOM作成
+        search_room_players_list = document.createElement("UL");
+        search_room_players_list.style.position     = "absolute";
+        search_room_players_list.style.width        = canvas.width * 8/10 + "px";
+        search_room_players_list.style.top          = "200px";
+        search_room_players_list.classList.add("list-group");
+        area.appendChild(search_room_players_list);
+
+        //作成したリストDOMに要素を追加する
+        serach_player_message.forEach(function(value){
+            //リストの要素DOM作成
+            let item = document.createElement("LI");
+            item.classList.add("list-group-item");
+
+            //名前追加
+            item.innerText = value;
+
+            //決定ボタン追加
+            let made_button = document.createElement("BUTTON");
+            made_button.innerText = "決定";
+            made_button.classList.add("btn");
+            made_button.classList.add("btn-info");
+            made_button.classList.add("btn-sm");
+            made_button.classList.add("active");
+            made_button.classList.add("float-right");
+            made_button.setAttribute("value", value);
+            made_button.addEventListener('click', function(){
+                //ボタン削除
+                displaySearchRoomDOMClear();
+                
+                //次のシーンを呼び出す
+                //TODO
+            });
+            item.appendChild(made_button);
+
+            //リスト要素をリストに追加
+            search_room_players_list.appendChild(item);
+        });
+
+        //要素が追加された後で位置調整する
+        search_room_players_list.style.left = canvas.width/2 - search_room_players_list.clientWidth/2 + 10 + "px";
+    }
+    socket.onmessage = onMessage;
+
+    //切断時
+    socket.onclose = function(e){
+        //ボタン削除
+        displaySearchRoomDOMClear();
+
+        //エラー表示へ
+        displayError("サーバーとの接続が途切れました");
+    };
+
+    //エラー時
+    socket.onerror = function(error){
+        //ボタン削除
+        displaySearchRoomDOMClear();
+
+        //エラー表示へ
+        displayError("サーバーとの接続中にエラーが発生しました");
+    };
+
+    //部屋作成をサーバーに通知
+    socket.send("SELECT : JoinRoom");
+}
+
+
+
+/*****************************************************************************************************
+* 
+*  相手プレイヤーの処理待機
 * 
 ****************************************************************************************************/
 
