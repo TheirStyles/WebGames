@@ -40,19 +40,6 @@ var nowSceneDraw = function(){};
  */
 var nickname = "no name";
 
-/*****************************************************************************************************
- * 
- *  列挙体
- * 
- ****************************************************************************************************/
-/**
- * @brief 盤面の状態情報
- */
- var OthelloState = {
-    blank : 0,
-    black : 1,
-    white : 2
-};
 
 
 /*****************************************************************************************************
@@ -77,6 +64,38 @@ var nickname = "no name";
         canvas.width  = displayWidth;
         canvas.height = displayHeight;
     }
+ }
+
+ /**
+  * @brief キャンバスの背景色を塗りつぶす
+  * @param canvas ターゲットキャンバス
+  * @param color 塗りつぶす色
+  * @return none
+  */
+ function canvasFillBackground(canvas, color="white"){
+    let ctx = canvas.getContext("2d");
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+ }
+
+ /**
+  * @brief 画像を読み込む
+  * @param path パス情報
+  * @param onLoad 読み込み後に行いたい処理
+  * @return 画像オブジェクト
+  */
+ function LoadImage(path, onLoad = function(){}){
+     //画像オブジェクト生成
+    const image = new Image();
+
+    //画像読み込みが完了したら開始するようにイベントを設定
+    image.addEventListener("load", onLoad());
+
+    //画像読み込み
+    image.src = path;
+
+    //画像オブジェクトを返す
+    return image;
  }
 
 /**
@@ -171,17 +190,6 @@ function setPartOfCanvasShade(diff, x, y, width, height){
     //ピクセルデータを上書き
     ctx.putImageData(pixels, x, y);
 }
-
-/**
- * @brief 盤面を表示する
- * @param board 盤面の情報
- */
-function drawOthelloBoard(board){
-    for(var i = 0; i < 8; ++i)
-    for(var j = 0; j < 8; ++j) {
-    }
-}
-
 
 /*****************************************************************************************************
 * 
@@ -357,7 +365,6 @@ function displayConnectingScene(){
 
     //通信が確立したら、次のシーンに進むようにする
     socket.onopen = displayNicknameScene;
-
 }
 
 /*****************************************************************************************************
@@ -455,7 +462,7 @@ function displayNicknameScene(){
         displayNicknameSceneDOMClear();
 
         //ニックネームデータをサーバーに送信
-        socket.send("NICKNAME : " + nickname);
+        socket.send("NICKNAME:" + nickname);
         
         //次のシーンを呼び出す
         displaySelectScene();
@@ -745,7 +752,7 @@ function displayMakeRoomScene(){
             displayMakeRoomDOMClear();
             
             //次のシーンを呼び出す
-            //TODO
+            displayOthelloScene();
         })
         area.appendChild(make_room_join_button);
         make_room_join_button.style.left  = canvas.width*3/4 - make_room_join_button.clientWidth/2 + 10 + "px"; 
@@ -771,7 +778,7 @@ function displayMakeRoomScene(){
     };
 
     //部屋作成をサーバーに通知
-    socket.send("SELECT : MakeRoom");
+    socket.send("SELECT:MakeRoom");
 }
 
 
@@ -928,7 +935,7 @@ function displaySearchRoomScene(){
                         displaySearchRoomDOMClear();
 
                         //次のシーンを呼び出す
-                        waitMatchPlayerScene("TargetPlayer : " + this.send_value);
+                        waitMatchPlayerScene("TargetPlayer:" + this.send_value);
                 }
             });
             item.appendChild(made_button);
@@ -961,7 +968,7 @@ function displaySearchRoomScene(){
     };
 
     //部屋作成をサーバーに通知
-    socket.send("SELECT : JoinRoom");
+    socket.send("SELECT:JoinRoom");
 }
 
 
@@ -1001,11 +1008,10 @@ function waitMatchPlayerScene(send_msg){
     //ソケットの受信処理登録
     socket.onmessage = function(e){
         let msg = e.data.split(":");
-        if(msg[0] == undefined || msg[1] == undefined){
+        if(msg[0] == null || msg[1] == null){
             return;
         }
         if(msg[0] == "PREPARED" && msg[1] == "OK"){
-            console.log(e.data);
             //次のシーンへ
         }
     }
@@ -1024,6 +1030,210 @@ function waitMatchPlayerScene(send_msg){
 
     //データ送信
     socket.send(send_msg);
+}
+
+
+
+/*****************************************************************************************************
+* 
+*  ゲーム画面
+* 
+****************************************************************************************************/
+/**
+ * @brief 盤面の状態情報
+ */
+var OthelloState = {
+    blank : 'O',    //ブランク
+    black : 'B',    //黒
+    white : 'W'     //白
+};
+
+/**
+ * @var board_state
+ * @brief 盤面情報
+ */
+var board_state = new Array(64);
+
+/**
+ * @var your_side
+ * @brief どちらの手か(白か黒か)
+ */
+var your_side = "white or black";
+
+/**
+ * @var white_num
+ * @brief 白のコマ数
+ */
+var white_num = 0;
+
+/**
+ * @var black_num
+ * @brief 黒のコマ数
+ */
+var black_num = 0;
+
+/**
+ * @var blank_img
+ * @brief 空白マスの画像
+ */
+var blank_img = LoadImage("./img/blank.png");
+
+/**
+ * @var black_img
+ * @brief 黒マスの画像
+ */
+var black_img = LoadImage("./img/black.png");
+
+/**
+ * @var white_img
+ * @brief 白マスの画像
+ */
+var white_img = LoadImage("./img/white.png");
+
+/**
+ * @brief 盤面の左上のx座標を取得する
+ * @param none
+ * @return x座標
+ */
+function GetBoardX() {
+    return canvas.clientWidth/12;
+}
+
+/**
+ * @brief 盤面の左上のy座標を取得する
+ * @param none
+ * @return y座標
+ */
+function GetBoardY() {
+    return canvas.clientHeight/8;
+}
+
+/**
+ * @brief マスの幅を取得する
+ * @param none
+ * @return マスの幅
+ */
+function GetMassSize(){
+    return canvas.clientWidth < canvas.clientHeight ? canvas.clientWidth / 11 : canvas.clientHeight / 11;
+}
+
+/**
+ * @brief 盤面を表示する
+ * @param board 盤面の情報
+ */
+function drawOthelloBoard(board){
+    //座標・サイズを計算しておく
+    let board_x = GetBoardX();
+    let board_y = GetBoardY();
+    let mass_size = GetMassSize();
+
+    //マスの描画
+    for(var i = 0; i < 8; ++i)
+    for(var j = 0; j < 8; ++j) {
+        let img = null;
+        switch(board[i*j]){
+            default: img = blank_img; break;
+            case OthelloState.blank: img = blank_img; break;
+            case OthelloState.black: img = black_img; break;
+            case OthelloState.white: img = white_img; break;
+        }
+        drawImageFromObject(img, board_x + mass_size * i, board_y + mass_size * j, mass_size, mass_size); 
+    }
+
+    //横線
+    for(var i = 0; i < 9; ++i){
+        let y = board_y + mass_size * i + (i%2==0?0:0.5);
+        ctx.beginPath();
+        ctx.moveTo(board_x, y);
+        ctx.lineTo(board_x + mass_size * 8, y);
+        ctx.closePath();
+        ctx.stroke();
+    }
+
+    //縦線
+    for(var i = 0; i < 9; ++i){
+        let x = board_x + mass_size * i + (i%2==0?0:0.5);
+        ctx.beginPath();
+        ctx.moveTo(x, board_y);
+        ctx.lineTo(x, board_y + mass_size * 8);
+        ctx.closePath();
+        ctx.stroke();
+    }
+}
+
+/**
+ * @brief サイドボードを表示する
+ * @param your_side 白サイドか黒サイドか(白ならwhite,黒ならblack)
+ * @param white_num 白の数
+ * @param black_num 黒の数
+ * @return none
+ */
+function drawSideBoard(your_side, white_num, black_num){
+    //盤描画
+    ctx.fillStyle = "rgb(157,157,157)";
+    let board = new Path2D();
+    board.rect(canvas.clientWidth*7/10, canvas.clientHeight/10, canvas.clientWidth/4, canvas.clientHeight*8/10);
+    ctx.fill(board);
+}
+
+
+/**
+ * @brief  オセロ画面を表示する
+ * @param none
+ * @return none
+ */
+function displayOthelloScene() {
+    //再描画処理設定
+    nowSceneDraw = function(){
+        //背景描画
+        canvasFillBackground(canvas, "rgb(237, 237, 237)");
+
+        //盤面描画
+        drawOthelloBoard(board_state);
+
+        //サイドボード描画
+        drawSideBoard(your_side, white_num, black_num);
+    };
+
+    //盤面初期化
+    board_state = new Array(64);
+    board_state.forEach(function(value){
+        value = OthelloState.blank;
+    })
+
+    nowSceneDraw();
+
+    //ソケットの受信時設定
+    socket.onmessage = function(e){
+        //メッセージ解析
+        let msg = e.data.splite(":");
+
+        //盤面描画
+        if(msg[0]=="BOARD"){
+            board_state = msg[1];
+            drawOthelloBoard(msg[1]);
+        }
+
+        //結果表示
+        if(msg[0]=="RESULT"){
+            //TODO
+            結果
+        }
+    }
+    
+    //切断時
+    socket.onclose = function(e){
+        //エラー表示へ
+        displayError("サーバーとの接続が途切れました");
+    };
+
+    //エラー時
+    socket.onerror = function(error){
+        //エラー表示へ
+        displayError("サーバーとの接続中にエラーが発生しました");
+    };
+
+    //TODO マウス入力時処理
 }
 
 
