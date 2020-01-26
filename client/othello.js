@@ -25,7 +25,14 @@ var ctx = canvas.getContext("2d");
  * @var socket
  * @brief ソケット
  */
-var socket = new WebSocket('ws://'+ location.host + ':8080');
+var socket = null;
+
+/**
+ * @var SERVER_URL
+ * @brief 通信サーバーのIP
+ */
+//const SERVER_URL = 'ws://' + location.host + ':8080';
+const SERVER_URL = 'wss://'+ "echo.websocket.org";
 
 /**
  * @var nowSceneDraw
@@ -156,33 +163,69 @@ function drawOthelloBoard(board){
     }
 }
 
+
 /*****************************************************************************************************
 * 
-* シーン処理関数
+*  スタート画面処理
 * 
 ****************************************************************************************************/
+/**
+ * @var error_back_button
+ * @brief エラー時にトップに戻るボタン
+ */
+var error_back_button = null;
 
 /**
- * @brief 部屋の作成を行う
+ * @brief エラー画面を表示する
+ * @param msg エラー内容
+ * @return none
  */
-function createRoom() {
+function displayError(msg = "エラーが発生しました"){
+    //再描画用の関数設定
+    nowSceneDraw = displayError;
 
+    //背景画像描画
+    drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
+        //描画完了後
+        function() {
+            //背景にフィルター
+            setCanvasShade(-100);
+
+            //タイトル描画
+            ctx.font = 'bold 20pt sans-serif';
+            ctx.fillStyle = "white";
+            ctx.textAlign = "center";
+            ctx.fillText(msg, canvas.width / 2, 150);
+        }
+    );
+
+    //resize時に呼ばれたとき、前に配置したボタンが残っていれば
+    if(error_back_button != null){
+        error_back_button.style.display = "none";
+    }
+
+    //トップへのボタン配置
+    error_back_button = document.createElement("BUTTON");
+    error_back_button.innerText        = "トップに戻る";
+    error_back_button.style.position   = "absolute";
+    error_back_button.style.top        = canvas.height - 200 + "px";
+    error_back_button.classList.add("btn");
+    error_back_button.classList.add("btn-primary");
+    error_back_button.classList.add("btn-lg");
+    error_back_button.classList.add("active");
+    error_back_button.addEventListener('click', function(){
+        //ボタン削除
+        error_back_button.style.display = "none";
+        
+        //次のシーンを呼び出す
+        displayStartScene();
+    })
+    area.appendChild(error_back_button);
+
+    //ボタンの横位置を調整 clientWidthを使うため、描画後に適用
+    error_back_button.style.left  = canvas.width/2 - error_back_button.clientWidth/2 + 10 + "px"; 
 }
 
-/**
- * @brief 部屋情報を表示する
- */
-function getRoom() {
-
-}
-
-/**
- * @brief メニュー画面を表示する
- */
-function displaySelectMenu() {
-
-    drawImage("img/menu_board.png", 0, 0, canvas.width, canvas.height);
-}
 
 
 /*****************************************************************************************************
@@ -201,9 +244,9 @@ var start_button = null;
  * @param none
  * @return none
  */
-function displayStart(){
+function displayStartScene(){
     //再描画用の関数設定
-    nowSceneDraw = displayStart;
+    nowSceneDraw = displayStartScene;
 
     //背景画像描画
     drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
@@ -423,6 +466,7 @@ function displaySelectScene(){
         select_back_button.style.display = "none";
         
         //次のシーンを呼び出す
+        displayMakeRoom();
     })
     area.appendChild(select_make_room);
     select_make_room.style.left  = canvas.width/2 - select_make_room.clientWidth/2 + 10 + "px"; 
@@ -477,14 +521,176 @@ function displaySelectScene(){
 *  部屋の作成処理
 * 
 ****************************************************************************************************/
+/**
+ * @var make_room_back_button
+ * @brief 戻るボタン
+ */
+var make_room_back_button = null;
+
+/**
+ * @var make_room_join_button
+ * @brief 決定ボタン
+ */
+var make_room_join_button = null;
+
+/**
+ * @var match_player_message
+ * @brief 再描画時にメッセージを再利用するための変数
+ */
+var match_player_message = null;
+
+/**
+ * @brief 部屋の作成画面を表示する
+ * @param none
+ * @return none
+ */
 function displayMakeRoom(){
+    //再描画用の関数設定
+    nowSceneDraw = displayMakeRoom;
+
+    //背景画像描画
+    drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
+        //描画完了後
+        function() {
+            //背景にフィルター
+            setCanvasShade(-100);
+
+            //タイトル描画
+            ctx.font = 'bold 20pt sans-serif';
+            ctx.fillStyle = "white";
+            ctx.textAlign = "center";
+            ctx.fillText("相手の参加待ちを行っています", canvas.width / 2, 150);
+        }
+    );
+
+    //resize時に呼ばれたとき、前に配置したボタンが残っていれば
+    if(make_room_back_button != null){
+        make_room_back_button.style.display = "none";
+    }
+
+    //戻るボタンを配置
+    make_room_back_button = document.createElement("BUTTON");
+    make_room_back_button.innerText        = "戻る";
+    make_room_back_button.style.position   = "absolute";
+    make_room_back_button.style.top        = canvas.height - 100 + "px";
+    make_room_back_button.classList.add("btn");
+    make_room_back_button.classList.add("btn-warning");
+    make_room_back_button.classList.add("btn-lg");
+    make_room_back_button.classList.add("active");
+    make_room_back_button.addEventListener('click', function(){
+        //ボタン削除
+        make_room_back_button.style.display = "none";
+        
+        //次のシーンを呼び出す
+        displaySelectScene();
+    })
+    area.appendChild(make_room_back_button);
+    make_room_back_button.style.left  = canvas.width/2 - make_room_back_button.clientWidth/2 + 10 + "px"; 
+
+    //ソケットが残っていれば
+    if(socket != null){
+        socket.onclose = function(){};
+        socket.close();
+    }
+
+    //ソケット作成
+    socket = new WebSocket(SERVER_URL)
+
+    //接続時
+    socket.onopen = function(e){
+        //部屋探しを通知
+        socket.send("SearchRoom");
+    }
+
+    //受信時(再描画用に登録前にonMessageを作成しておく)
+    onMessage = function(e=null){
+        //再描画用に登録
+        nowSceneDraw = onMessage;
+
+        //再描画用の記録変数
+        match_player_message = (e == null ? match_player_message : e.data);
+
+        //参加相手が見つかったことを通知
+        drawImageFromPath("./img/start_background.jpg", 0, 0, canvas.width, canvas.height,
+            //描画完了後
+            function() {
+                //背景にフィルター
+                setCanvasShade(-100);
+
+                //タイトル描画
+                ctx.font = 'bold 20pt sans-serif';
+                ctx.fillStyle = "white";
+                ctx.textAlign = "center";
+                ctx.fillText("対戦相手が見つかりました", canvas.width / 2, 150);
+
+                //相手情報表示
+                ctx.fillText(match_player_message, canvas.width / 2, 260);
+            }
+        );
+
+        //戻るボタン位置変更
+        make_room_back_button.style.left = canvas.width/4 - make_room_back_button.clientWidth/2 + 10 + "px"; 
+
+        //resize時に呼ばれたとき、前に配置したボタンが残っていれば
+        if(make_room_join_button != null){
+            make_room_join_button.style.display = "none";
+        }
+
+        //決定ボタン追加
+        make_room_join_button = document.createElement("BUTTON");
+        make_room_join_button.innerText        = "決定";
+        make_room_join_button.style.position   = "absolute";
+        make_room_join_button.style.top        = canvas.height - 100 + "px";
+        make_room_join_button.classList.add("btn");
+        make_room_join_button.classList.add("btn-info");
+        make_room_join_button.classList.add("btn-lg");
+        make_room_join_button.classList.add("active");
+        make_room_join_button.addEventListener('click', function(){
+            //ボタン削除
+            make_room_back_button.style.display = "none";
+            make_room_join_button.style.display = "none";
+            
+            //次のシーンを呼び出す
+            //TODO
+        })
+        area.appendChild(make_room_join_button);
+        make_room_join_button.style.left  = canvas.width*3/4 - make_room_join_button.clientWidth/2 + 10 + "px"; 
+    }
+    socket.onmessage = onMessage;
+
+    //切断時
+    socket.onclose = function(e){
+        //ボタン削除
+        make_room_back_button.style.display = "none";
+
+        //エラー表示へ
+        displayError("サーバーとの接続が途切れました");
+    };
+
+    //エラー時
+    socket.onerror = function(error){
+        //ボタン削除
+        make_room_back_button.style.display = "none";
+
+        //エラー表示へ
+        displayError("サーバーとの接続中にエラーが発生しました");
+    };
     
 }
 
 
+
 /*****************************************************************************************************
 * 
-*  実行処理
+*  部屋の参加処理
+* 
+****************************************************************************************************/
+
+
+
+/*****************************************************************************************************
+* 
+*  開始処理
 * 
 ****************************************************************************************************/
 //ウィンドウ変更時のイベント登録
@@ -497,4 +703,4 @@ window.addEventListener('resize', function(){
 canvasResize(canvas);
 
 //処理開始
-displayStart();
+displayStartScene();
