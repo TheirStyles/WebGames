@@ -882,12 +882,20 @@ function displaySearchRoomScene(){
             made_button.classList.add("active");
             made_button.classList.add("float-right");
             made_button.setAttribute("value", value);
-            made_button.addEventListener('click', function(){
-                //ボタン削除
-                displaySearchRoomDOMClear();
-                
-                //次のシーンを呼び出す
-                //TODO
+            made_button.addEventListener(
+                'click', 
+                {
+                    send_value: value, 
+                    handleEvent : function(event){
+                        //ボタン削除
+                        displaySearchRoomDOMClear();
+                        
+                        //結果送信
+                        socket.send("TargetPlayer : " + this.send_value);
+
+                        //次のシーンを呼び出す
+                        waitMatchPlayerScene();
+                }
             });
             item.appendChild(made_button);
 
@@ -929,7 +937,14 @@ function displaySearchRoomScene(){
 *  相手プレイヤーの処理待機
 * 
 ****************************************************************************************************/
+/**
+ * @brief  相手プレイヤーの入力待機画面を表示する
+ * @param none
+ * @return none
+ */
+function waitMatchPlayerScene(){
 
+}
 
 
 /*****************************************************************************************************
