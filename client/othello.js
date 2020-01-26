@@ -25,7 +25,13 @@ var ctx = canvas.getContext("2d");
  * @var socket
  * @brief ソケット
  */
-var socket = new WebSocket('wss://'+ "echo.websocket.org");
+var socket = null;
+
+/**
+ * @var SERVER_URL
+ * @brief ソケットの接続先URL
+ */
+const SERVER_URL = 'ws://echo.websocket.org';
 //const SERVER_URL = 'ws://' + location.host + ':8080';
 
 /**
@@ -270,7 +276,7 @@ var start_button = null;
  * @var displayStartSceneDOMClear
  * @brief スタート画面のDOMを全て削除する
  */
-function displayStartSceneClear() {
+function displayStartSceneDOMClear() {
     if(start_button != null){
         start_button.style.display = "none";
         start_button = null;
@@ -286,7 +292,7 @@ function displayStartScene(){
     //再描画用の関数設定
     nowSceneDraw = function() {
         //再描画時に残る、DOMをクリアしておく
-        displayStartSceneClear();
+        displayStartSceneDOMClear();
 
         //再描画
         displayStartScene();
@@ -318,7 +324,7 @@ function displayStartScene(){
     start_button.classList.add("active");
     start_button.addEventListener('click', function(){
         //DOM削除
-        displayStartSceneClear();
+        displayStartSceneDOMClear();
         
         //次のシーンを呼び出す
         displayConnectingScene();
@@ -363,8 +369,25 @@ function displayConnectingScene(){
     //描画
     nowSceneDraw();
 
+    //接続開始
+    socket = new WebSocket(SERVER_URL);
+
     //通信が確立したら、次のシーンに進むようにする
     socket.onopen = displayNicknameScene;
+
+    //切断時
+    socket.onclose = function(e){
+        //エラー表示へ
+        displayError("サーバーとの接続が途切れました");
+    };
+
+    //エラー時
+    socket.onerror = function(error){
+        //エラー表示へ
+        displayError("サーバーとの接続中にエラーが発生しました");
+    };
+
+    console.log(socket.readyState);
 }
 
 /*****************************************************************************************************
