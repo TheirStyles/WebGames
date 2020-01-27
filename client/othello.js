@@ -32,7 +32,7 @@ var socket = null;
  * @brief ソケットの接続先URL
  */
 //const SERVER_URL = 'ws://echo.websocket.org';
-const SERVER_URL = 'ws://' + location.host + ':32600';
+const SERVER_URL = 'ws://' + location.host + ':50000';
 
 /**
  * @var nowSceneDraw

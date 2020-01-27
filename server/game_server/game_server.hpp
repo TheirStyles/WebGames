@@ -17,11 +17,11 @@ namespace app::game_server {
 
     /**
     * @class GameServer
-    * @brief Http通信サーバー
+    * @brief ゲームサーバー
     */
     class GameServer {
     private:
-        static constexpr unsigned char PORT = 32600;    //!< ポート番号
+        static constexpr unsigned short PORT = 50000;    //!< ポート番号
 
     public:
         GameServer() = delete;
@@ -44,7 +44,7 @@ namespace app::game_server {
         * @param port ポート番号
         * @exception runtime_error送出
         */
-        GameServer(net::io_context& ioc, unsigned char port);
+        GameServer(net::io_context& ioc, unsigned short port);
 
     private:   
         net::io_context& ioc;

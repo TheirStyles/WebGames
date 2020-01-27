@@ -15,7 +15,7 @@ namespace app::game_server {
     {
     }
 
-    GameServer::GameServer(net::io_context& ioc, unsigned char port) :
+    GameServer::GameServer(net::io_context& ioc, unsigned short port) :
         ioc         (ioc),
         endpoint    (tcp::v4(), port),
         listener    (std::make_shared<Listener>(ioc, endpoint))
