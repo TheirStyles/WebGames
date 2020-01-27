@@ -30,8 +30,12 @@ namespace app::game_server {
         Session(tcp::socket&& socket);
 
     private:
+		static inline std::shared_ptr<Session> make_room_player;
+		static inline std::shared_ptr<Session> join_room_player;
         websocket::stream<beast::tcp_stream> ws;    //!< ストリーム
         beast::flat_buffer buffer;                  //!< 受信用バッファ
+		std::string name;							//!< ニックネーム
+		bool first;									//!< 先手
 
     private:
 		/**
@@ -84,6 +88,12 @@ namespace app::game_server {
         * @return none
         */
         void Run();
+
+		/**
+		* @brief セッションを終了する
+		* @return none
+		*/
+		void Stop();
     };
 
 }

@@ -121,7 +121,6 @@
   <ItemGroup>
     <ClInclude Include="game_server.hpp" />
     <ClInclude Include="listener.hpp" />
-    <ClInclude Include="player.hpp" />
     <ClInclude Include="session.hpp" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

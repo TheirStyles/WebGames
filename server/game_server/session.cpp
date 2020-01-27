@@ -45,6 +45,10 @@ namespace app::game_server {
 	}
 
 	void Session::DoRead() {
+
+		//バッファクリア
+		this->buffer.consume(this->buffer.size());
+
 		//リクエストを非同期読み込み
 		this->ws.async_read(
 			this->buffer,
@@ -60,24 +64,71 @@ namespace app::game_server {
 		boost::ignore_unused(ec);
 		boost::ignore_unused(bytes_transferred);
 
-		//エコー処理 TODO UPDATE
-		ws.text(ws.got_text());
-		this->ws.async_write(
-			this->buffer.data(),
-			beast::bind_front_handler(
-				&Session::OnWrite,
-				this->shared_from_this()
-			)
-		);
+		//データをstring化
+		std::string data = beast::buffers_to_string(this->buffer.data());
+
+		//分割
+		std::vector<std::string> split{};
+		boost::algorithm::split(split, data, boost::is_any_of(":"));
+
+		//命令解析
+		if (split[0] == "NICKNAME") {
+			this->name = split[1];
+			this->DoRead();
+		}
+		else if (split[0] == "SELECT") {
+			if (split[1] == "MakeRoom") {
+				make_room_player = this->shared_from_this();
+				if (join_room_player) {
+					join_room_player->ws.async_write(
+						net::buffer("PLAYER_LIST:" + this->name),
+						beast::bind_front_handler(
+							&Session::OnWrite,
+							this->shared_from_this()
+						)
+					);
+				}
+			}
+			else if (split[1] == "JoinRoom") {
+				join_room_player = this->shared_from_this();
+				if (make_room_player) {
+					join_room_player->ws.async_write(
+						net::buffer("PLAYER_LIST:" + make_room_player->name),
+						beast::bind_front_handler(
+							&Session::OnWrite,
+							this->shared_from_this()
+						)
+					);
+				}
+			}
+		}
+		else if (split[0] == "TARGET_PLAYER") {
+			make_room_player->ws.async_write(
+				net::buffer(this->name),
+				beast::bind_front_handler(
+					&Session::OnWrite,
+					this->shared_from_this()
+				)
+			);
+		}
+		else if (split[0] == "ENTRY") {
+			this->ws.async_write(
+				net::buffer("PREPARED:OK"),
+				beast::bind_front_handler(
+					&Session::OnWrite,
+					this->shared_from_this()
+				)
+			);
+		}
+		else {
+			this->DoRead();
+		}
 	}
 
 	void Session::OnWrite(beast::error_code ec, std::size_t bytes_transferred) {
 		//使用しない変数であることを通知
 		boost::ignore_unused(ec);
 		boost::ignore_unused(bytes_transferred);
-
-		//バッファクリア
-		this->buffer.consume(this->buffer.size());
 
 		//再び読み込み開始
 		this->DoRead();
@@ -97,5 +148,9 @@ namespace app::game_server {
 				this->shared_from_this()
 			)
 		);
+	}
+
+	void Session::Stop() {
+		this->DoClose();
 	}
 }
