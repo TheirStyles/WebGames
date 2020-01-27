@@ -1058,6 +1058,7 @@ function waitMatchPlayerScene(send_msg){
         }
         if(msg[0] == "PREPARED" && msg[1] == "OK"){
             //次のシーンへ
+            displayOthelloScene();
         }
     }
 
