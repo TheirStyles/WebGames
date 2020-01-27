@@ -772,6 +772,9 @@ function displayMakeRoomScene(){
             //ボタン削除
             displayMakeRoomDOMClear();
             
+            //決定を通知
+            socket.send("ENTER:OK");
+
             //次のシーンを呼び出す
             displayOthelloScene();
         })
@@ -1070,28 +1073,28 @@ var OthelloState = {
 };
 
 /**
+ * @var game_start
+ * @brief ゲーム開始フラグ
+ */
+var game_start = false;
+
+/**
+ * @var game_end
+ * @brief ゲーム終了フラグ
+ */
+var game_end = false;
+
+/**
  * @var board_state
  * @brief 盤面情報
  */
 var board_state = new Array(64);
 
 /**
- * @var your_side
- * @brief どちらの手か(白か黒か)
+ * @var my_turn
+ * @brief ターン情報 trueで自身のターン falseで相手ターン
  */
-var your_side = "white or black";
-
-/**
- * @var white_num
- * @brief 白のコマ数
- */
-var white_num = 0;
-
-/**
- * @var black_num
- * @brief 黒のコマ数
- */
-var black_num = 0;
+var my_turn = false;
 
 /**
  * @var blank_img
@@ -1112,21 +1115,18 @@ var black_img = LoadImage("./img/black.png");
 var white_img = LoadImage("./img/white.png");
 
 /**
- * @brief 盤面の左上のx座標を取得する
- * @param none
- * @return x座標
+ * @brief 盤面から石の数を取得する
+ * @param state OthelloStateの値
+ * @return none
  */
-function GetBoardX() {
-    return canvas.clientWidth/12;
-}
-
-/**
- * @brief 盤面の左上のy座標を取得する
- * @param none
- * @return y座標
- */
-function GetBoardY() {
-    return canvas.clientHeight/8;
+function countStones(state){
+    let ans = 0;
+    board_state.forEach(function(value){
+        if(value == state){
+            ++ans;
+        }
+    })
+    return ans;
 }
 
 /**
@@ -1135,7 +1135,25 @@ function GetBoardY() {
  * @return マスの幅
  */
 function GetMassSize(){
-    return canvas.clientWidth < canvas.clientHeight ? canvas.clientWidth / 11 : canvas.clientHeight / 11;
+    return canvas.clientWidth < canvas.clientHeight ? canvas.clientWidth / 10 : canvas.clientHeight / 10;
+}
+
+/**
+ * @brief 盤面の左上のx座標を取得する
+ * @param none
+ * @return x座標
+ */
+function GetBoardX() {
+    return canvas.clientWidth/2 - GetMassSize() * 4;
+}
+
+/**
+ * @brief 盤面の左上のy座標を取得する
+ * @param none
+ * @return y座標
+ */
+function GetBoardY() {
+    return canvas.clientHeight/20;
 }
 
 /**
@@ -1161,6 +1179,10 @@ function drawOthelloBoard(board){
         drawImageFromObject(img, board_x + mass_size * i, board_y + mass_size * j, mass_size, mass_size); 
     }
 
+    //コンテキスト設定
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgb(255,255,255)";
+
     //横線
     for(var i = 0; i < 9; ++i){
         let y = board_y + mass_size * i + (i%2==0?0:0.5);
@@ -1183,20 +1205,19 @@ function drawOthelloBoard(board){
 }
 
 /**
- * @brief サイドボードを表示する
- * @param your_side 白サイドか黒サイドか(白ならwhite,黒ならblack)
- * @param white_num 白の数
- * @param black_num 黒の数
+ * @brief 下部のメッセージ情報を描画する
+ * @param msg メッセージ
  * @return none
  */
-function drawSideBoard(your_side, white_num, black_num){
-    //盤描画
-    ctx.fillStyle = "rgb(157,157,157)";
-    let board = new Path2D();
-    board.rect(canvas.clientWidth*7/10, canvas.clientHeight/10, canvas.clientWidth/4, canvas.clientHeight*8/10);
-    ctx.fill(board);
-}
+function drawUnderMessage(msg){
+    //描画設定
+    ctx.font = 'bold 28pt sans-serif';
+    ctx.fillStyle = "black";
+    ctx.textAlign = "center";
 
+    //描画
+    ctx.fillText(msg, canvas.width / 2, GetBoardY() + GetMassSize() * 9);
+}
 
 /**
  * @brief  オセロ画面を表示する
@@ -1212,9 +1233,41 @@ function displayOthelloScene() {
         //盤面描画
         drawOthelloBoard(board_state);
 
-        //サイドボード描画
-        drawSideBoard(your_side, white_num, black_num);
+        //条件で分岐
+        if(!game_start){
+            drawUnderMessage("準備中です");
+        }
+        else if(game_end){
+            //石の数計算
+            let black_num = countStones(OthelloState.black);
+            let white_num = countStones(OthelloState.white);
+            //テキスト一部用意
+            let txt = "黒:" + black_num + ", 白:" + white_num;
+
+            if(black_num == white_num){
+                drawUnderMessage(txt + "で引き分けです");
+            }
+            else if(white_num < black_num){
+                drawUnderMessage(txt + "黒の勝ちです");
+            }
+            else if(black_num < white_num){
+                drawUnderMessage(txt + "白の勝ちです");
+            }
+        }
+        else {
+            if(my_turn){
+                drawUnderMessage("あなたの番です");
+            }
+            else {
+                drawUnderMessage("相手の番です");
+            }
+        }
     };
+
+    //設定初期化
+    game_start = false;
+    game_end = false;
+    my_turn = false;
 
     //盤面初期化
     board_state = new Array(64);
@@ -1222,24 +1275,42 @@ function displayOthelloScene() {
         value = OthelloState.blank;
     })
 
+    //描画
+    nowSceneDraw();
+
     //ソケットの受信時設定
     socket.onmessage = function(e){
         //メッセージ解析
-        let msg = e.data.splite(":");
+        let msg = e.data.split(":");
 
         //開始宣言
+        if(msg[0]=="START"){
+            if(msg[1] == "YOU"){
+                my_turn = true;
+            }
+            else {
+                my_turn = false;
+            }
+            game_start = true;
+        }
+
+        //交代
+        if(msg[0]=="SWITCH"){
+            my_turn = !my_turn;
+        }
 
         //盤面描画
         if(msg[0]=="BOARD"){
             board_state = msg[1];
-            drawOthelloBoard(msg[1]);
         }
 
-        //結果表示
-        if(msg[0]=="RESULT"){
-            //TODO
-            結果
+        //ゲーム終了
+        if(msg[0]=="END"){
+            game_end = true;
         }
+
+        //再描画
+        nowSceneDraw();
     }
     
     //切断時
@@ -1254,13 +1325,47 @@ function displayOthelloScene() {
         displayError("サーバーとの接続中にエラーが発生しました");
     };
 
-    //TODO マウス入力時処理
-    window.addEventListener('mousedown', function(e){
+    //マウス入力時処理
+    canvas.addEventListener('mousedown', function(e){
+        //自身のターンの時、盤面上での位置を計算して送信
+        if(my_turn){
+            //計算結果
+            let board_x = null;
+            let board_y = null;
+            
+            //座標取得
+            let rect = canvas.getBoundingClientRect();
+            let x = e.pageX - rect.left;
+            let y = e.pageY - rect.top;
+            let bx = GetBoardX();
+            let by = GetBoardY();
+            let ms = GetMassSize();
 
+            //横位置計算
+            for(var i = 0; i < 8; ++i){
+                if(bx + ms * i <= x && x <= bx + ms * (i+1)){
+                    board_x = String(i);
+                    break;
+                }
+            }
+
+            //縦位置計算
+            for(var i = 0; i < 8; ++i){
+                if(by + ms * i <= y && y <= by + ms * (i+1)){
+                    board_y = String(i);
+                    break;
+                }
+            }
+
+            //盤面上にあったなら、データ送信
+            if(board_x != null && board_y != null){
+                socket.send("SET_STONE:" + board_y + "," + board_x);
+            }
+        }
     });
 
-    nowSceneDraw();
 }
+
 
 
 /*****************************************************************************************************
