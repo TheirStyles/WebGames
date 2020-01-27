@@ -980,7 +980,7 @@ function displaySearchRoomScene(){
                         displaySearchRoomDOMClear();
 
                         //次のシーンを呼び出す
-                        waitMatchPlayerScene("TargetPlayer:" + this.send_value);
+                        waitMatchPlayerScene("TARGET_PLAYER:" + this.send_value);
                 }
             });
             item.appendChild(made_button);
