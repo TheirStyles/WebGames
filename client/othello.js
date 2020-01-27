@@ -31,8 +31,8 @@ var socket = null;
  * @var SERVER_URL
  * @brief ソケットの接続先URL
  */
-const SERVER_URL = 'ws://echo.websocket.org';
-//const SERVER_URL = 'ws://' + location.host + ':8080';
+//const SERVER_URL = 'ws://echo.websocket.org';
+const SERVER_URL = 'ws://' + location.host + ':32600';
 
 /**
  * @var nowSceneDraw
@@ -386,8 +386,6 @@ function displayConnectingScene(){
         //エラー表示へ
         displayError("サーバーとの接続中にエラーが発生しました");
     };
-
-    console.log(socket.readyState);
 }
 
 /*****************************************************************************************************

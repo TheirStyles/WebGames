@@ -34,6 +34,13 @@ namespace app::game_server {
         beast::flat_buffer buffer;                  //!< 受信用バッファ
 
     private:
+		/**
+		 * @brief 実行時の処理
+		 * @parma none
+		 * @return none
+		*/
+		void OnRun();
+
         /**
          * @brief 接続時の処理
          * @param ec エラー情報

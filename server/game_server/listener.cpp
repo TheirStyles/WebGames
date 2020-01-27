@@ -57,6 +57,11 @@ namespace app::game_server {
             //セッションを生成・実行する
 			std::make_shared<Session>(std::move(socket))->Run();
         }
+		else {
+			//TODO
+			std::cout << ec.message() << std::endl;
+		}
+		
 
         //再び受付開始
         this->DoAccept();

@@ -12,6 +12,33 @@ namespace app::game_server {
 		ws(std::move(socket))
 	{
 	}
+
+	void Session::OnRun() {
+		//タイムアウト設定
+		this->ws.set_option(
+			websocket::stream_base::timeout::suggested(
+				beast::role_type::server
+			)
+		);
+
+		//ハンドシェイクのデコレーター設定
+		this->ws.set_option(websocket::stream_base::decorator(
+			[](websocket::response_type& res) {
+				res.set(
+					http::field::server,
+					std::string(BOOST_BEAST_VERSION_STRING) + " websocket-server-async"
+				);
+			}
+		));
+
+		//メッセージ処理を実行する
+		this->ws.async_accept(
+			beast::bind_front_handler(
+				&Session::OnAccept,
+				this->shared_from_this()
+			)
+		);
+	}
 	
 	void Session::OnAccept(beast::error_code ec){
 		this->DoRead();
@@ -30,12 +57,8 @@ namespace app::game_server {
 
 	void Session::OnRead(beast::error_code ec, std::size_t bytes_transferred) {
 		//使用しない変数であることを通知
+		boost::ignore_unused(ec);
 		boost::ignore_unused(bytes_transferred);
-
-		//ストリームがエラーで閉じた場合
-		if (ec == http::error::end_of_stream) {
-			return this->DoClose();
-		}
 
 		//エコー処理 TODO UPDATE
 		ws.text(ws.got_text());
@@ -66,27 +89,11 @@ namespace app::game_server {
 	}
 
 	void Session::Run() {
-		//タイムアウト設定
-		this->ws.set_option(
-			websocket::stream_base::timeout::suggested(
-				beast::role_type::server
-			)
-		);
-
-		//ハンドシェイクのデコレーターせってい
-		this->ws.set_option(websocket::stream_base::decorator(
-			[](websocket::response_type& res){
-				 res.set(
-					http::field::server,
-                	std::string(BOOST_BEAST_VERSION_STRING) +" websocket-server-async"
-				);
-			}
-		));
-
-		//メッセージ処理を実行する
-		this->ws.async_accept(
+		//メッセージをコンテキストに投機
+		net::dispatch(
+			this->ws.get_executor(),
 			beast::bind_front_handler(
-				&Session::OnAccept,
+				&Session::OnRun,
 				this->shared_from_this()
 			)
 		);
