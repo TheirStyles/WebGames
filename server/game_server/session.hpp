@@ -12,7 +12,7 @@ namespace app::game_server {
 
     /**
      * @class Session
-     * @brief 通信の一連処理
+     * @brief クライアントとのやり取りを管理するクラス
     */
     class Session : public std::enable_shared_from_this<Session> {
 	public:

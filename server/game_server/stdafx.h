@@ -21,6 +21,7 @@
 #include <vector>
 #include <exception>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/websocket.hpp>
