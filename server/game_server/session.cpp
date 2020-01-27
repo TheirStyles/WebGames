@@ -89,8 +89,6 @@ namespace app::game_server {
 	}
 
 	void Session::Run() {
-		std::cout << __func__ << std::endl;
-
 		//メッセージをコンテキストに投機
 		net::dispatch(
 			this->ws.get_executor(),
