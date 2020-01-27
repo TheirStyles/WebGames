@@ -197,6 +197,18 @@ function setPartOfCanvasShade(diff, x, y, width, height){
     ctx.putImageData(pixels, x, y);
 }
 
+/**
+ * @brief ソケットのイベントをクリアする
+ * @param socket
+ * @return none
+ */
+function clearSocketEvent(socket){
+    socket.onopen = null;
+    socket.onmessage = null;
+    socket.onerror = displayError("サーバーとの接続中にエラーが発生しました");
+    socket.onclose = displayError("サーバーとの接続が途切れました");
+}
+
 /*****************************************************************************************************
 * 
 *  スタート画面処理
@@ -704,6 +716,9 @@ function displayMakeRoomScene(){
         make_room_back_button.addEventListener('click', function(){
             //ボタン削除
             displayMakeRoomDOMClear();
+
+            //イベント初期化
+            clearSocketEvent(socket);
             
             //次のシーンを呼び出す
             displaySelectScene();
@@ -772,6 +787,9 @@ function displayMakeRoomScene(){
             //ボタン削除
             displayMakeRoomDOMClear();
             
+            //イベント初期化
+            clearSocketEvent(socket);
+
             //決定を通知
             socket.send("ENTER:OK");
 
@@ -883,6 +901,9 @@ function displaySearchRoomScene(){
         search_room_back_button.addEventListener('click', function(){
             //ボタン削除
             displaySearchRoomDOMClear();
+
+            //イベント初期化
+            clearSocketEvent(socket);
             
             //次のシーンを呼び出す
             displaySelectScene();
