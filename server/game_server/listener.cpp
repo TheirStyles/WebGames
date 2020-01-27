@@ -42,10 +42,6 @@ namespace app::game_server {
     }
 
     void Listener::DoAccept(){
-
-		//TODO
-		std::cout << __func__ << std::endl;
-
         this->acceptor.async_accept(
             net::make_strand(ioc),
             beast::bind_front_handler(
@@ -56,9 +52,6 @@ namespace app::game_server {
     }
 
     void Listener::OnAccept(beast::error_code ec, tcp::socket socket){
-
-		//TODO
-		std::cout << __func__ << std::endl;
 
         //エラーは無視
         if(!ec){

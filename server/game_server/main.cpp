@@ -17,7 +17,7 @@ int main(int argc, char** argv){
     try {
 		//サーバー情報
 		constexpr size_t DEFAULT_THREAD_NUM = 2;
-		constexpr unsigned char port = 32600;
+		constexpr unsigned short port = 50000;
 		size_t thread_num = DEFAULT_THREAD_NUM;  //!< 将来の変更用に変数を用意
 		std::vector<std::thread> threads{};
 
