@@ -11,7 +11,7 @@ namespace app::game_server {
 
     Listener::Listener(net::io_context& ioc, tcp::endpoint endpoint) :
         ioc         (ioc),
-        acceptor    (net::make_strand(ioc)),
+        acceptor    (net::make_strand(ioc))
     {
         
         beast::error_code ec{};
@@ -55,7 +55,7 @@ namespace app::game_server {
         //エラーは無視
         if(!ec){
             //セッションを生成・実行する
-			std::make_shared<Session>(std::move(socket), this->doc_root)->Run();
+			std::make_shared<Session>(std::move(socket))->Run();
         }
 
         //再び受付開始

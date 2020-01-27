@@ -17,6 +17,7 @@ int main(int argc, char** argv){
     try {
 		//サーバー情報
 		constexpr size_t DEFAULT_THREAD_NUM = 2;
+		constexpr unsigned char port = 32600;
 		size_t thread_num = DEFAULT_THREAD_NUM;  //!< 将来の変更用に変数を用意
 		std::vector<std::thread> threads{};
 
@@ -24,7 +25,7 @@ int main(int argc, char** argv){
         net::io_context ioc(thread_num);
 
         //サーバー作成
-        auto http_server = std::make_unique<app::game_server::GameServer>(ioc, doc_root);
+        auto http_server = std::make_unique<app::game_server::GameServer>(ioc, port);
 
         //サーバー起動
         http_server->Run();
