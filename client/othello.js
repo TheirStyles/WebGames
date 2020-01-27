@@ -1332,9 +1332,6 @@ function displayOthelloScene() {
             game_end = true;
         }
 
-
-        console.log(msg[1]);
-
         //再描画
         nowSceneDraw();
     }
