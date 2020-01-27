@@ -1056,9 +1056,10 @@ function waitMatchPlayerScene(send_msg){
         if(msg[0] == null || msg[1] == null){
             return;
         }
-        if(msg[0] == "PREPARED" && msg[1] == "OK"){
+        if(msg[0] == "PREPARED"){
             //次のシーンへ
             displayOthelloScene();
+            return;
         }
     }
 
@@ -1331,6 +1332,9 @@ function displayOthelloScene() {
             game_end = true;
         }
 
+
+        console.log(msg[1]);
+
         //再描画
         nowSceneDraw();
     }
@@ -1338,12 +1342,14 @@ function displayOthelloScene() {
     //切断時
     socket.onclose = function(e){
         //エラー表示へ
+        nowSceneDraw = function () { };
         displayError("サーバーとの接続が途切れました");
     };
 
     //エラー時
     socket.onerror = function(error){
         //エラー表示へ
+        nowSceneDraw = function () { };
         displayError("サーバーとの接続中にエラーが発生しました");
     };
 
@@ -1386,6 +1392,7 @@ function displayOthelloScene() {
         }
     });
 
+    socket.send("ONGAME:NULL");
 }
 
 

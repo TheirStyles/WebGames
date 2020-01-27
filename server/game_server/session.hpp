@@ -8,6 +8,8 @@
 
 #include "stdafx.h"
 
+#include "othello.hpp"
+
 namespace app::game_server {
 
     /**
@@ -32,10 +34,11 @@ namespace app::game_server {
     private:
 		static inline std::shared_ptr<Session> make_room_player;
 		static inline std::shared_ptr<Session> join_room_player;
+		static inline std::unique_ptr<Othello> othello;
         websocket::stream<beast::tcp_stream> ws;    //!< ストリーム
         beast::flat_buffer buffer;                  //!< 受信用バッファ
 		std::string name;							//!< ニックネーム
-		bool first;									//!< 先手
+		bool first;
 
     private:
 		/**
@@ -81,6 +84,14 @@ namespace app::game_server {
          * @return none
         */
         void DoClose();
+
+		/**
+		* @brief ゲーム開始
+         * @param ec エラー情報
+         * @param bytes_transferred 処理されたサイズ
+		 * @return none
+		*/
+		void OnGame(beast::error_code ec, std::size_t bytes_transferred);
 
     public:
         /**

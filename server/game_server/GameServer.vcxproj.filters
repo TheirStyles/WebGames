@@ -44,5 +44,8 @@
     <ClInclude Include="session.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="othello.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

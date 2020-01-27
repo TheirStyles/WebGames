@@ -78,25 +78,27 @@ namespace app::game_server {
 		}
 		else if (split[0] == "SELECT") {
 			if (split[1] == "MakeRoom") {
+				this->first = true;
 				make_room_player = this->shared_from_this();
 				if (join_room_player) {
 					join_room_player->ws.async_write(
 						net::buffer("PLAYER_LIST:" + this->name),
 						beast::bind_front_handler(
 							&Session::OnWrite,
-							this->shared_from_this()
+							join_room_player->shared_from_this()
 						)
 					);
 				}
 			}
 			else if (split[1] == "JoinRoom") {
+				this->first = false;
 				join_room_player = this->shared_from_this();
 				if (make_room_player) {
 					join_room_player->ws.async_write(
 						net::buffer("PLAYER_LIST:" + make_room_player->name),
 						beast::bind_front_handler(
 							&Session::OnWrite,
-							this->shared_from_this()
+							join_room_player->shared_from_this()
 						)
 					);
 				}
@@ -107,18 +109,41 @@ namespace app::game_server {
 				net::buffer(this->name),
 				beast::bind_front_handler(
 					&Session::OnWrite,
+					make_room_player->shared_from_this()
+				)
+			);
+		}
+		else if (split[0] == "ENTER") {
+
+			//ゲームのインスタンス化
+			othello = std::make_unique<Othello>();
+
+			//準備完了を通知
+			join_room_player->ws.async_write(
+				net::buffer("PREPARED:OK"),
+				beast::bind_front_handler(
+					&Session::OnWrite,
+					join_room_player->shared_from_this()
+				)
+			);
+
+			this->DoRead();
+
+		}
+		else if (split[0] == "ONGAME") {
+			//盤面情報
+			this->ws.async_write(
+				net::buffer("BOARD:" + othello->GetBoardStateString()),
+				beast::bind_front_handler(
+					&Session::OnGame,
 					this->shared_from_this()
 				)
 			);
 		}
-		else if (split[0] == "ENTRY") {
-			this->ws.async_write(
-				net::buffer("PREPARED:OK"),
-				beast::bind_front_handler(
-					&Session::OnWrite,
-					this->shared_from_this()
-				)
-			);
+		else if (split[0] == "SET_STONE") {
+
+
+			this->DoRead();
 		}
 		else {
 			this->DoRead();
@@ -137,6 +162,20 @@ namespace app::game_server {
 	void Session::DoClose() {
 		beast::error_code ec{};
 		this->ws.close(beast::websocket::close_reason("shutdown"), ec);
+	}
+
+	void Session::OnGame(beast::error_code ec, std::size_t bytes_transferred) {
+		//使用しない変数であることを通知
+		boost::ignore_unused(ec);
+		boost::ignore_unused(bytes_transferred);
+
+		this->ws.async_write(
+			net::buffer(std::string("START") + (this->first ? "YOU" : "NO")),
+			beast::bind_front_handler(
+				&Session::OnWrite,
+				this->shared_from_this()
+			)
+		);
 	}
 
 	void Session::Run() {
