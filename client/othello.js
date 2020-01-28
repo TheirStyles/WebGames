@@ -205,8 +205,14 @@ function setPartOfCanvasShade(diff, x, y, width, height){
 function clearSocketEvent(socket){
     socket.onopen = null;
     socket.onmessage = null;
-    socket.onerror = displayError("サーバーとの接続中にエラーが発生しました");
-    socket.onclose = displayError("サーバーとの接続が途切れました");
+    socket.onerror = function(e){
+        displayError("サーバーとの接続中にエラーが発生しました");
+        console.log(e.data);
+    };
+    socket.onclose = function(e){
+        displayError("サーバーとの接続が途切れました");
+        console.log(e.data);
+    }
 }
 
 /*****************************************************************************************************
@@ -226,6 +232,7 @@ var error_back_button = null;
  * @return none
  */
 function displayError(msg = "エラーが発生しました"){
+
     //再描画用の関数設定
     nowSceneDraw = displayError;
 
@@ -247,6 +254,7 @@ function displayError(msg = "エラーが発生しました"){
     //resize時に呼ばれたとき、前に配置したボタンが残っていれば
     if(error_back_button != null){
         error_back_button.style.display = "none";
+        error_back_button = null;
     }
 
     //トップへのボタン配置
@@ -261,6 +269,7 @@ function displayError(msg = "エラーが発生しました"){
     error_back_button.addEventListener('click', function(){
         //ボタン削除
         error_back_button.style.display = "none";
+        error_back_button = null;
         
         //次のシーンを呼び出す
         displayStartScene();
@@ -816,7 +825,7 @@ function displayMakeRoomScene(){
         displayMakeRoomDOMClear();
 
         //エラー表示へ
-        displayError("サーバーとの接続中にエラーが発生しました");
+        displayError(error.data);
     };
 
     //部屋作成をサーバーに通知
@@ -1325,6 +1334,7 @@ function displayOthelloScene() {
         //盤面描画
         if(msg[0]=="BOARD"){
             board_state = msg[1];
+            console.log(msg[1]);
         }
 
         //ゲーム終了
@@ -1339,14 +1349,12 @@ function displayOthelloScene() {
     //切断時
     socket.onclose = function(e){
         //エラー表示へ
-        nowSceneDraw = function () { };
         displayError("サーバーとの接続が途切れました");
     };
 
     //エラー時
     socket.onerror = function(error){
         //エラー表示へ
-        nowSceneDraw = function () { };
         displayError("サーバーとの接続中にエラーが発生しました");
     };
 

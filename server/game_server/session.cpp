@@ -79,6 +79,7 @@ namespace app::game_server {
 		else if (split[0] == "SELECT") {
 			if (split[1] == "MakeRoom") {
 				this->first = true;
+				make_room_player_turn = true;
 				make_room_player = this->shared_from_this();
 				if (join_room_player) {
 					join_room_player->ws.async_write(
@@ -141,9 +142,51 @@ namespace app::game_server {
 			);
 		}
 		else if (split[0] == "SET_STONE") {
+			//x y 取得
+			std::vector<std::string> pos{};
+			boost::algorithm::split(pos, split[1], boost::is_any_of(","));
 
+			//セット
+			auto ans = othello->SetStone(std::atoi(pos[0].c_str()), std::atoi(pos[1].c_str()));
 
-			this->DoRead();
+			//結果送信
+			if (ans) {
+				make_room_player_turn = !make_room_player_turn;
+
+				//auto make_p = make_room_player;
+				//make_p->ws.async_write(
+				//	net::buffer("BOARD:" + othello->GetBoardStateString()),
+				//	[&make_p](beast::error_code ec, std::size_t bytes_transferred) {
+				//		make_p->ws.async_write(
+				//			net::buffer("SWITCH:NONE"),
+				//				make_room_player_turn ? 
+				//				beast::bind_front_handler(
+				//					&Session::OnWrite,
+				//					make_p->shared_from_this()
+				//				) :
+				//				[](beast::error_code ec, std::size_t bytes_transferred) {}
+				//		);
+				//	}
+				//);
+
+				//auto join_p = join_room_player;
+				//join_room_player->ws.async_write(
+				//	net::buffer("BOARD:" + othello->GetBoardStateString()),
+				//	[&join_p](beast::error_code ec, std::size_t bytes_transferred) {
+				//		join_p->ws.async_write(
+				//			net::buffer("SWITCH:NONE"),
+				//			make_room_player_turn ?
+				//			beast::bind_front_handler(
+				//				&Session::OnWrite,
+				//				join_room_player->shared_from_this()
+				//			) :
+				//			[](beast::error_code ec, std::size_t bytes_transferred) {}
+				//		);
+				//	}
+				//);
+
+				this->DoRead();
+			}
 		}
 		else {
 			this->DoRead();
@@ -169,13 +212,21 @@ namespace app::game_server {
 		boost::ignore_unused(ec);
 		boost::ignore_unused(bytes_transferred);
 
-		this->ws.async_write(
-			net::buffer(std::string("START") + (this->first ? "YOU" : "NO")),
-			beast::bind_front_handler(
-				&Session::OnWrite,
-				this->shared_from_this()
-			)
-		);
+		if (this->first) {
+			this->ws.async_write(
+				net::buffer(std::string("START:") + (this->first ? "YOU" : "NO")),
+				beast::bind_front_handler(
+					&Session::OnWrite,
+					this->shared_from_this()
+				)
+			);
+		}
+		else {
+			this->ws.async_write(
+				net::buffer(std::string("START:") + (this->first ? "YOU" : "NO")),
+				[](beast::error_code ec, std::size_t bytes_transferred) {}
+			);
+		}
 	}
 
 	void Session::Run() {

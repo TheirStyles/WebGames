@@ -32,13 +32,14 @@ namespace app::game_server {
         Session(tcp::socket&& socket);
 
     private:
+		static inline bool make_room_player_turn;
 		static inline std::shared_ptr<Session> make_room_player;
 		static inline std::shared_ptr<Session> join_room_player;
 		static inline std::unique_ptr<Othello> othello;
         websocket::stream<beast::tcp_stream> ws;    //!< ストリーム
         beast::flat_buffer buffer;                  //!< 受信用バッファ
 		std::string name;							//!< ニックネーム
-		bool first;
+		bool first;									//!< クライアントが先手であるか
 
     private:
 		/**
